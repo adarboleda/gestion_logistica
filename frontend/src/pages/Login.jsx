@@ -202,6 +202,28 @@ function Login() {
                     </div>
                     <div
                       onClick={() =>
+                        fillCredentials('conductor1@logistica.com', 'cond123')
+                      }
+                      className="p-2 bg-white rounded cursor-pointer hover:bg-gray-50 transition-colors border border-gray-200"
+                    >
+                      <p className="font-medium text-gray-900">👤 Conductor1</p>
+                      <p className="text-gray-600 text-xs">
+                        conductor1@logistica.com / cond123
+                      </p>
+                    </div>
+                    <div
+                      onClick={() =>
+                        fillCredentials('conductor2@logistica.com', 'cond123')
+                      }
+                      className="p-2 bg-white rounded cursor-pointer hover:bg-gray-50 transition-colors border border-gray-200"
+                    >
+                      <p className="font-medium text-gray-900">👤 Conductor2</p>
+                      <p className="text-gray-600 text-xs">
+                        conductor2@logistica.com / cond123
+                      </p>
+                    </div>
+                    <div
+                      onClick={() =>
                         fillCredentials('operador@logistica.com', 'oper123')
                       }
                       className="p-2 bg-white rounded cursor-pointer hover:bg-gray-50 transition-colors border border-gray-200"

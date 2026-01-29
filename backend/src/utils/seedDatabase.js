@@ -4,6 +4,8 @@ import Usuario from '../models/Usuario.js';
 import Bodega from '../models/Bodega.js';
 import Producto from '../models/Producto.js';
 import Vehiculo from '../models/Vehiculo.js';
+import Ruta from '../models/Ruta.js';
+import Movimiento from '../models/Movimiento.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -20,10 +22,12 @@ const seedDatabase = async () => {
 
     // Limpiar colecciones existentes (CUIDADO: Esto borrará todos los datos)
     console.log('🗑️  Limpiando base de datos...');
-    await Usuario.deleteMany({});
-    await Bodega.deleteMany({});
-    await Producto.deleteMany({});
+    await Movimiento.deleteMany({});
+    await Ruta.deleteMany({});
     await Vehiculo.deleteMany({});
+    await Producto.deleteMany({});
+    await Bodega.deleteMany({});
+    await Usuario.deleteMany({});
     console.log('✅ Base de datos limpia\n');
 
     // ========== CREAR USUARIOS ==========
@@ -304,6 +308,295 @@ const seedDatabase = async () => {
 
     console.log(`✅ ${vehiculos.length} vehículos creados\n`);
 
+    // ========== CREAR RUTAS ==========
+    console.log('🗺️  Creando rutas...');
+
+    const rutasData = [
+      {
+        origen: {
+          nombre: 'Bodega Central Bogotá',
+          direccion: 'Calle 100 #15-20, Bogotá',
+          coordenadas: {
+            latitud: 4.710989,
+            longitud: -74.072092,
+          },
+        },
+        destino: {
+          nombre: 'Cliente Zona Norte',
+          direccion: 'Calle 170 #45-12, Bogotá',
+          coordenadas: {
+            latitud: 4.753207,
+            longitud: -74.053431,
+          },
+          contacto: {
+            nombre: 'Roberto Gómez',
+            telefono: '3101234567',
+            email: 'roberto@cliente.com',
+          },
+        },
+        fecha_programada: new Date('2026-02-01T08:00:00'),
+        vehiculo: vehiculos[0]._id,
+        conductor: conductores[0]._id,
+        lista_productos: [
+          {
+            producto: productos[0]._id, // Laptop Dell
+            cantidad: 10,
+            entregado: 0,
+          },
+          {
+            producto: productos[1]._id, // Mouse Logitech
+            cantidad: 20,
+            entregado: 0,
+          },
+        ],
+        estado: 'planificada',
+        prioridad: 'alta',
+        distancia_km: 15.5,
+        tiempo_estimado_horas: 1.5,
+        observaciones: 'Cliente importante, entrega prioritaria',
+      },
+      {
+        origen: {
+          nombre: 'Bodega Norte Medellín',
+          direccion: 'Carrera 65 #45-30, Medellín',
+          coordenadas: {
+            latitud: 6.244203,
+            longitud: -75.581212,
+          },
+        },
+        destino: {
+          nombre: 'Supermercado La Canasta',
+          direccion: 'Calle 33 #70-15, Medellín',
+          coordenadas: {
+            latitud: 6.230833,
+            longitud: -75.590553,
+          },
+          contacto: {
+            nombre: 'Andrea López',
+            telefono: '3209876543',
+            email: 'andrea@canasta.com',
+          },
+        },
+        fecha_programada: new Date('2026-01-30T10:00:00'),
+        vehiculo: vehiculos[1]._id,
+        conductor: conductores[1]._id,
+        lista_productos: [
+          {
+            producto: productos[2]._id, // Arroz Diana
+            cantidad: 50,
+            entregado: 50,
+          },
+          {
+            producto: productos[3]._id, // Aceite de Cocina
+            cantidad: 30,
+            entregado: 30,
+          },
+        ],
+        estado: 'completada',
+        prioridad: 'media',
+        distancia_km: 8.2,
+        tiempo_estimado_horas: 0.5,
+        fecha_inicio_real: new Date('2026-01-30T09:55:00'),
+        fecha_fin_real: new Date('2026-01-30T11:20:00'),
+        tracking: [
+          {
+            fecha: new Date('2026-01-30T10:00:00'),
+            latitud: 6.244203,
+            longitud: -75.581212,
+            velocidad: 0,
+            observacion: 'Salida de bodega',
+          },
+          {
+            fecha: new Date('2026-01-30T10:15:00'),
+            latitud: 6.240123,
+            longitud: -75.585432,
+            velocidad: 45,
+            observacion: 'En ruta',
+          },
+          {
+            fecha: new Date('2026-01-30T10:40:00'),
+            latitud: 6.230833,
+            longitud: -75.590553,
+            velocidad: 0,
+            observacion: 'Llegada a destino',
+          },
+        ],
+        observaciones: 'Entrega completada sin novedades',
+      },
+      {
+        origen: {
+          nombre: 'Bodega Costa Barranquilla',
+          direccion: 'Calle 80 #52-120, Barranquilla',
+          coordenadas: {
+            latitud: 10.963889,
+            longitud: -74.796387,
+          },
+        },
+        destino: {
+          nombre: 'Clínica del Norte',
+          direccion: 'Carrera 51B #84-90, Barranquilla',
+          coordenadas: {
+            latitud: 11.003889,
+            longitud: -74.806387,
+          },
+          contacto: {
+            nombre: 'Dr. Carlos Mendoza',
+            telefono: '3158889999',
+            email: 'cmendoza@clinica.com',
+          },
+        },
+        fecha_programada: new Date('2026-01-28T07:00:00'),
+        vehiculo: vehiculos[1]._id,
+        conductor: conductores[1]._id,
+        lista_productos: [
+          {
+            producto: productos[5]._id, // Acetaminofén
+            cantidad: 100,
+            entregado: 0,
+          },
+        ],
+        estado: 'cancelada',
+        prioridad: 'urgente',
+        distancia_km: 12.3,
+        tiempo_estimado_horas: 1,
+        motivo_cancelacion: 'Cliente canceló el pedido',
+        observaciones: 'Reprogramar para la próxima semana',
+      },
+    ];
+
+    // Crear rutas usando create para ejecutar los middlewares
+    const rutas = [];
+    for (const rutaData of rutasData) {
+      const ruta = await Ruta.create(rutaData);
+      rutas.push(ruta);
+    }
+
+    console.log(`✅ ${rutas.length} rutas creadas\n`);
+
+    // ========== CREAR MOVIMIENTOS ==========
+    console.log('📊 Creando movimientos de inventario...');
+
+    // IMPORTANTE: Los movimientos se deben crear con create() porque tienen
+    // middleware pre-save que actualiza automáticamente el stock de los productos
+    const movimientosData = [
+      // Entradas (compras) - Incrementan el stock
+      {
+        tipo: 'entrada',
+        producto: productos[0]._id, // Laptop Dell
+        cantidad: 25,
+        usuario_responsable: usuarios[0]._id,
+        motivoMovimiento: 'compra',
+        observaciones: 'Compra inicial de laptops para stock',
+        documentoReferencia: 'OC-2026-001',
+      },
+      {
+        tipo: 'entrada',
+        producto: productos[1]._id, // Mouse Logitech
+        cantidad: 50,
+        usuario_responsable: usuarios[4]._id,
+        motivoMovimiento: 'compra',
+        observaciones: 'Reposición de accesorios',
+        documentoReferencia: 'OC-2026-002',
+      },
+      {
+        tipo: 'entrada',
+        producto: productos[2]._id, // Arroz Diana
+        cantidad: 100,
+        usuario_responsable: usuarios[1]._id,
+        motivoMovimiento: 'compra',
+        observaciones: 'Compra mensual de alimentos',
+        documentoReferencia: 'OC-2026-003',
+      },
+      {
+        tipo: 'entrada',
+        producto: productos[5]._id, // Acetaminofén
+        cantidad: 200,
+        usuario_responsable: usuarios[0]._id,
+        motivoMovimiento: 'compra',
+        observaciones: 'Stock de medicamentos para distribución',
+        documentoReferencia: 'OC-2026-004',
+      },
+
+      // Salidas (ventas) - Decrementan el stock
+      {
+        tipo: 'salida',
+        producto: productos[0]._id, // Laptop Dell
+        cantidad: 15,
+        usuario_responsable: usuarios[4]._id,
+        motivoMovimiento: 'venta',
+        observaciones: 'Venta a empresa cliente',
+        documentoReferencia: 'FAC-2026-001',
+      },
+      {
+        tipo: 'salida',
+        producto: productos[1]._id, // Mouse Logitech
+        cantidad: 30,
+        usuario_responsable: usuarios[4]._id,
+        motivoMovimiento: 'venta',
+        observaciones: 'Venta al por mayor',
+        documentoReferencia: 'FAC-2026-002',
+      },
+      {
+        tipo: 'salida',
+        producto: productos[2]._id, // Arroz Diana
+        cantidad: 50,
+        usuario_responsable: usuarios[1]._id,
+        motivoMovimiento: 'venta',
+        observaciones: 'Despacho a supermercado',
+        documentoReferencia: 'FAC-2026-003',
+      },
+
+      // Ajustes de inventario
+      {
+        tipo: 'salida',
+        producto: productos[3]._id, // Aceite de Cocina
+        cantidad: 5,
+        usuario_responsable: usuarios[4]._id,
+        motivoMovimiento: 'daño',
+        observaciones: 'Producto dañado durante almacenamiento',
+        documentoReferencia: 'AJ-2026-001',
+      },
+      {
+        tipo: 'entrada',
+        producto: productos[4]._id, // Camisetas Polo
+        cantidad: 20,
+        usuario_responsable: usuarios[1]._id,
+        motivoMovimiento: 'devolucion',
+        observaciones: 'Devolución de cliente por talla incorrecta',
+        documentoReferencia: 'DEV-2026-001',
+      },
+
+      // Transferencias entre bodegas
+      {
+        tipo: 'transferencia',
+        producto: productos[5]._id, // Acetaminofén
+        cantidad: 100,
+        usuario_responsable: usuarios[1]._id,
+        bodegaOrigen: bodegas[0]._id, // Bogotá
+        bodegaDestino: bodegas[2]._id, // Barranquilla
+        motivoMovimiento: 'transferencia_bodegas',
+        observaciones: 'Transferencia para suplir demanda en costa',
+        documentoReferencia: 'TRANS-2026-001',
+      },
+    ];
+
+    // Crear movimientos uno por uno (NO usar insertMany)
+    // porque el middleware pre-save actualiza el stock automáticamente
+    const movimientos = [];
+    for (const movData of movimientosData) {
+      try {
+        const movimiento = await Movimiento.create(movData);
+        movimientos.push(movimiento);
+        console.log(
+          `  ✓ Movimiento ${movimiento.tipo} creado - Producto: ${movData.producto}`,
+        );
+      } catch (error) {
+        console.error(`  ✗ Error en movimiento: ${error.message}`);
+      }
+    }
+
+    console.log(`✅ ${movimientos.length} movimientos creados\n`);
+
     // ========== RESUMEN ==========
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📊 RESUMEN DE DATOS CREADOS');
@@ -312,8 +605,9 @@ const seedDatabase = async () => {
     console.log(`🏢 Bodegas: ${bodegas.length}`);
     console.log(`📦 Productos: ${productos.length}`);
     console.log(`🚚 Vehículos: ${vehiculos.length}`);
+    console.log(`🗺️  Rutas: ${rutas.length}`);
+    console.log(`📊 Movimientos: ${movimientos.length}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-
     console.log('👤 CREDENCIALES DE ACCESO:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('Admin:        admin@logistica.com / admin123');
