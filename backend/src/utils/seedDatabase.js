@@ -334,7 +334,7 @@ const seedDatabase = async () => {
             email: 'roberto@cliente.com',
           },
         },
-        fecha_programada: new Date('2026-02-01T08:00:00'),
+        fecha_programada: new Date('2026-02-05T08:00:00'),
         vehiculo: vehiculos[0]._id,
         conductor: conductores[0]._id,
         lista_productos: [
@@ -377,7 +377,7 @@ const seedDatabase = async () => {
             email: 'andrea@canasta.com',
           },
         },
-        fecha_programada: new Date('2026-01-30T10:00:00'),
+        fecha_programada: new Date('2026-02-02T10:00:00'),
         vehiculo: vehiculos[1]._id,
         conductor: conductores[1]._id,
         lista_productos: [
@@ -396,25 +396,25 @@ const seedDatabase = async () => {
         prioridad: 'media',
         distancia_km: 8.2,
         tiempo_estimado_horas: 0.5,
-        fecha_inicio_real: new Date('2026-01-30T09:55:00'),
-        fecha_fin_real: new Date('2026-01-30T11:20:00'),
+        fecha_inicio_real: new Date('2026-02-02T09:55:00'),
+        fecha_fin_real: new Date('2026-02-02T11:20:00'),
         tracking: [
           {
-            fecha: new Date('2026-01-30T10:00:00'),
+            fecha: new Date('2026-02-02T10:00:00'),
             latitud: 6.244203,
             longitud: -75.581212,
             velocidad: 0,
             observacion: 'Salida de bodega',
           },
           {
-            fecha: new Date('2026-01-30T10:15:00'),
+            fecha: new Date('2026-02-02T10:15:00'),
             latitud: 6.240123,
             longitud: -75.585432,
             velocidad: 45,
             observacion: 'En ruta',
           },
           {
-            fecha: new Date('2026-01-30T10:40:00'),
+            fecha: new Date('2026-02-02T10:40:00'),
             latitud: 6.230833,
             longitud: -75.590553,
             velocidad: 0,
@@ -445,7 +445,7 @@ const seedDatabase = async () => {
             email: 'cmendoza@clinica.com',
           },
         },
-        fecha_programada: new Date('2026-01-28T07:00:00'),
+        fecha_programada: new Date('2026-02-10T07:00:00'),
         vehiculo: vehiculos[1]._id,
         conductor: conductores[1]._id,
         lista_productos: [

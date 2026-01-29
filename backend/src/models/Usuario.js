@@ -56,7 +56,7 @@ const usuarioSchema = new mongoose.Schema(
 );
 
 // Índices para optimizar búsquedas
-usuarioSchema.index({ email: 1 });
+// email ya tiene índice automático por unique: true
 usuarioSchema.index({ rol: 1 });
 
 // Middleware pre-save: Hashear password antes de guardar

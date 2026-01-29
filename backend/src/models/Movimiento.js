@@ -81,11 +81,11 @@ const movimientoSchema = new mongoose.Schema(
     },
     stockAnterior: {
       type: Number,
-      required: true,
+      // Se asigna automáticamente en el middleware pre-save
     },
     stockNuevo: {
       type: Number,
-      required: true,
+      // Se asigna automáticamente en el middleware pre-save
     },
   },
   {

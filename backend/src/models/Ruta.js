@@ -229,7 +229,7 @@ rutaSchema.pre('save', async function (next) {
 });
 
 // Índices compuestos
-rutaSchema.index({ numeroRuta: 1 });
+// numeroRuta ya tiene índice automático por unique: true
 rutaSchema.index({ estado: 1, fecha_programada: 1 });
 rutaSchema.index({ conductor: 1, estado: 1 });
 rutaSchema.index({ vehiculo: 1, estado: 1 });

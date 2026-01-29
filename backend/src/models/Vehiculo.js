@@ -119,7 +119,7 @@ const vehiculoSchema = new mongoose.Schema(
 );
 
 // Índices
-vehiculoSchema.index({ placa: 1 });
+// placa ya tiene índice automático por unique: true
 vehiculoSchema.index({ estado: 1 });
 vehiculoSchema.index({ conductor_asignado: 1 });
 

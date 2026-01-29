@@ -70,7 +70,7 @@ const bodegaSchema = new mongoose.Schema(
 );
 
 // Índices
-bodegaSchema.index({ nombre: 1 });
+// nombre ya tiene índice automático por unique: true
 bodegaSchema.index({ estado: 1 });
 bodegaSchema.index({ 'direccion.ciudad': 1 });
 

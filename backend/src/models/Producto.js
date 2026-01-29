@@ -90,7 +90,7 @@ const productoSchema = new mongoose.Schema(
 );
 
 // Índices compuestos para mejorar búsquedas
-productoSchema.index({ codigo: 1 });
+// codigo ya tiene índice automático por unique: true
 productoSchema.index({ bodega: 1, activo: 1 });
 productoSchema.index({ nombre: 'text', descripcion: 'text' }); // Búsqueda de texto
 
