@@ -6,6 +6,7 @@ import Producto from '../models/Producto.js';
 import Vehiculo from '../models/Vehiculo.js';
 import Ruta from '../models/Ruta.js';
 import Movimiento from '../models/Movimiento.js';
+import Entrega from '../models/Entrega.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -22,6 +23,7 @@ const seedDatabase = async () => {
 
     // Limpiar colecciones existentes (CUIDADO: Esto borrará todos los datos)
     console.log('🗑️  Limpiando base de datos...');
+    await Entrega.deleteMany({});
     await Movimiento.deleteMany({});
     await Ruta.deleteMany({});
     await Vehiculo.deleteMany({});
@@ -41,35 +43,35 @@ const seedDatabase = async () => {
         email: 'admin@logistica.com',
         password: 'admin123',
         rol: 'admin',
-        telefono: '3001234567',
+        telefono: '0991234567',
       },
       {
         nombre: 'Carlos Coordinador',
         email: 'coordinador@logistica.com',
         password: 'coord123',
         rol: 'coordinador',
-        telefono: '3009876543',
+        telefono: '0999876543',
       },
       {
         nombre: 'Juan Conductor',
         email: 'conductor1@logistica.com',
         password: 'cond123',
         rol: 'conductor',
-        telefono: '3005551111',
+        telefono: '0985551111',
       },
       {
         nombre: 'Pedro Conductor',
         email: 'conductor2@logistica.com',
         password: 'cond123',
         rol: 'conductor',
-        telefono: '3005552222',
+        telefono: '0985552222',
       },
       {
         nombre: 'María Operadora',
         email: 'operador@logistica.com',
         password: 'oper123',
         rol: 'operador',
-        telefono: '3005553333',
+        telefono: '0985553333',
       },
     ];
 
@@ -87,52 +89,52 @@ const seedDatabase = async () => {
 
     const bodegas = await Bodega.insertMany([
       {
-        nombre: 'Bodega Central Bogotá',
+        nombre: 'Bodega Central Quito',
         direccion: {
-          calle: 'Calle 100 #15-20',
-          ciudad: 'Bogotá',
-          estado: 'Cundinamarca',
-          codigoPostal: '11001',
+          calle: 'Av. 10 de Agosto N35-120',
+          ciudad: 'Quito',
+          estado: 'Pichincha',
+          codigoPostal: '170507',
           coordenadas: {
-            latitud: 4.710989,
-            longitud: -74.072092,
+            latitud: -0.180653,
+            longitud: -78.467834,
           },
         },
         estado: 'activa',
         capacidadMaxima: 10000,
-        descripcion: 'Bodega principal de distribución en Bogotá',
+        descripcion: 'Bodega principal de distribución en Quito',
       },
       {
-        nombre: 'Bodega Norte Medellín',
+        nombre: 'Bodega Puerto Guayaquil',
         direccion: {
-          calle: 'Carrera 65 #45-30',
-          ciudad: 'Medellín',
-          estado: 'Antioquia',
-          codigoPostal: '05001',
+          calle: 'Av. de las Américas Km 6.5',
+          ciudad: 'Guayaquil',
+          estado: 'Guayas',
+          codigoPostal: '090101',
           coordenadas: {
-            latitud: 6.244203,
-            longitud: -75.581212,
+            latitud: -2.203816,
+            longitud: -79.897453,
           },
         },
         estado: 'activa',
         capacidadMaxima: 8000,
-        descripcion: 'Bodega de distribución regional zona norte',
+        descripcion: 'Bodega de distribución regional zona costa',
       },
       {
-        nombre: 'Bodega Costa Barranquilla',
+        nombre: 'Bodega Sur Cuenca',
         direccion: {
-          calle: 'Calle 80 #52-120',
-          ciudad: 'Barranquilla',
-          estado: 'Atlántico',
-          codigoPostal: '08001',
+          calle: 'Av. Huayna Cápac 1-234',
+          ciudad: 'Cuenca',
+          estado: 'Azuay',
+          codigoPostal: '010101',
           coordenadas: {
-            latitud: 10.963889,
-            longitud: -74.796387,
+            latitud: -2.900128,
+            longitud: -79.005896,
           },
         },
         estado: 'activa',
         capacidadMaxima: 6000,
-        descripcion: 'Bodega para región costa atlántica',
+        descripcion: 'Bodega para región austral',
       },
     ]);
 
@@ -314,23 +316,23 @@ const seedDatabase = async () => {
     const rutasData = [
       {
         origen: {
-          nombre: 'Bodega Central Bogotá',
-          direccion: 'Calle 100 #15-20, Bogotá',
+          nombre: 'Bodega Central Quito',
+          direccion: 'Av. 10 de Agosto N35-120, Quito',
           coordenadas: {
-            latitud: 4.710989,
-            longitud: -74.072092,
+            latitud: -0.180653,
+            longitud: -78.467834,
           },
         },
         destino: {
-          nombre: 'Cliente Zona Norte',
-          direccion: 'Calle 170 #45-12, Bogotá',
+          nombre: 'Cliente Zona Norte Quito',
+          direccion: 'Av. Eloy Alfaro N45-12, Quito',
           coordenadas: {
-            latitud: 4.753207,
-            longitud: -74.053431,
+            latitud: -0.150207,
+            longitud: -78.478431,
           },
           contacto: {
             nombre: 'Roberto Gómez',
-            telefono: '3101234567',
+            telefono: '0981234567',
             email: 'roberto@cliente.com',
           },
         },
@@ -357,37 +359,37 @@ const seedDatabase = async () => {
       },
       {
         origen: {
-          nombre: 'Bodega Norte Medellín',
-          direccion: 'Carrera 65 #45-30, Medellín',
+          nombre: 'Bodega Puerto Guayaquil',
+          direccion: 'Av. de las Américas Km 6.5, Guayaquil',
           coordenadas: {
-            latitud: 6.244203,
-            longitud: -75.581212,
+            latitud: -2.203816,
+            longitud: -79.897453,
           },
         },
         destino: {
-          nombre: 'Supermercado La Canasta',
-          direccion: 'Calle 33 #70-15, Medellín',
+          nombre: 'Supermercado La Favorita',
+          direccion: 'Av. Francisco de Orellana, Guayaquil',
           coordenadas: {
-            latitud: 6.230833,
-            longitud: -75.590553,
+            latitud: -2.170833,
+            longitud: -79.890553,
           },
           contacto: {
             nombre: 'Andrea López',
-            telefono: '3209876543',
-            email: 'andrea@canasta.com',
+            telefono: '0929876543',
+            email: 'andrea@favorita.com',
           },
         },
-        fecha_programada: new Date('2026-02-02T10:00:00'),
+        fecha_programada: new Date('2026-02-04T10:00:00'),
         vehiculo: vehiculos[1]._id,
         conductor: conductores[1]._id,
         lista_productos: [
           {
-            producto: productos[2]._id, // Arroz Diana
+            producto: productos[2]._id, // Arroz
             cantidad: 50,
             entregado: 50,
           },
           {
-            producto: productos[3]._id, // Aceite de Cocina
+            producto: productos[3]._id, // Aceite
             cantidad: 30,
             entregado: 30,
           },
@@ -396,27 +398,27 @@ const seedDatabase = async () => {
         prioridad: 'media',
         distancia_km: 8.2,
         tiempo_estimado_horas: 0.5,
-        fecha_inicio_real: new Date('2026-02-02T09:55:00'),
-        fecha_fin_real: new Date('2026-02-02T11:20:00'),
+        fecha_inicio_real: new Date('2026-02-04T09:55:00'),
+        fecha_fin_real: new Date('2026-02-04T11:20:00'),
         tracking: [
           {
-            fecha: new Date('2026-02-02T10:00:00'),
-            latitud: 6.244203,
-            longitud: -75.581212,
+            fecha: new Date('2026-02-04T10:00:00'),
+            latitud: -2.203816,
+            longitud: -79.897453,
             velocidad: 0,
             observacion: 'Salida de bodega',
           },
           {
-            fecha: new Date('2026-02-02T10:15:00'),
-            latitud: 6.240123,
-            longitud: -75.585432,
+            fecha: new Date('2026-02-04T10:15:00'),
+            latitud: -2.190123,
+            longitud: -79.893432,
             velocidad: 45,
             observacion: 'En ruta',
           },
           {
-            fecha: new Date('2026-02-02T10:40:00'),
-            latitud: 6.230833,
-            longitud: -75.590553,
+            fecha: new Date('2026-02-04T10:40:00'),
+            latitud: -2.170833,
+            longitud: -79.890553,
             velocidad: 0,
             observacion: 'Llegada a destino',
           },
@@ -425,24 +427,24 @@ const seedDatabase = async () => {
       },
       {
         origen: {
-          nombre: 'Bodega Costa Barranquilla',
-          direccion: 'Calle 80 #52-120, Barranquilla',
+          nombre: 'Bodega Sur Cuenca',
+          direccion: 'Av. Huayna Cápac 1-234, Cuenca',
           coordenadas: {
-            latitud: 10.963889,
-            longitud: -74.796387,
+            latitud: -2.900128,
+            longitud: -79.005896,
           },
         },
         destino: {
-          nombre: 'Clínica del Norte',
-          direccion: 'Carrera 51B #84-90, Barranquilla',
+          nombre: 'Hospital del IESS Cuenca',
+          direccion: 'Av. Huayna Cápac y 12 de Abril, Cuenca',
           coordenadas: {
-            latitud: 11.003889,
-            longitud: -74.806387,
+            latitud: -2.906889,
+            longitud: -79.010387,
           },
           contacto: {
             nombre: 'Dr. Carlos Mendoza',
-            telefono: '3158889999',
-            email: 'cmendoza@clinica.com',
+            telefono: '0978889999',
+            email: 'cmendoza@iess.gob.ec',
           },
         },
         fecha_programada: new Date('2026-02-10T07:00:00'),
@@ -572,10 +574,10 @@ const seedDatabase = async () => {
         producto: productos[5]._id, // Acetaminofén
         cantidad: 100,
         usuario_responsable: usuarios[1]._id,
-        bodegaOrigen: bodegas[0]._id, // Bogotá
-        bodegaDestino: bodegas[2]._id, // Barranquilla
+        bodegaOrigen: bodegas[0]._id, // Quito
+        bodegaDestino: bodegas[2]._id, // Cuenca
         motivoMovimiento: 'transferencia_bodegas',
-        observaciones: 'Transferencia para suplir demanda en costa',
+        observaciones: 'Transferencia para suplir demanda en zona austral',
         documentoReferencia: 'TRANS-2026-001',
       },
     ];
@@ -597,6 +599,308 @@ const seedDatabase = async () => {
 
     console.log(`✅ ${movimientos.length} movimientos creados\n`);
 
+    // ========== CREAR ENTREGAS ==========
+    console.log('🚚 Creando entregas...');
+
+    const entregasData = [
+      // Entrega pendiente - lista para iniciar
+      {
+        ruta: rutas[0]._id,
+        conductor: conductores[0]._id,
+        vehiculo: vehiculos[0]._id,
+        cliente: {
+          nombre: 'Roberto Gómez - TechCorp Ecuador',
+          direccion: 'Av. Eloy Alfaro N45-12, Quito',
+          telefono: '0981234567',
+          email: 'roberto@techcorp.ec',
+          coordenadas: {
+            latitud: -0.150207,
+            longitud: -78.478431,
+          },
+        },
+        origen: {
+          nombre: 'Bodega Central Quito',
+          direccion: 'Av. 10 de Agosto N35-120, Quito',
+          coordenadas: {
+            latitud: -0.180653,
+            longitud: -78.467834,
+          },
+        },
+        productos: [
+          {
+            producto: productos[0]._id,
+            cantidadProgramada: 10,
+            cantidadEntregada: 0,
+          },
+          {
+            producto: productos[1]._id,
+            cantidadProgramada: 20,
+            cantidadEntregada: 0,
+          },
+        ],
+        estado: 'pendiente',
+        fecha_programada: new Date('2026-02-05T08:00:00'),
+        distanciaTotal: 15.5,
+        tiempoEstimadoLlegada: 45,
+        observaciones: 'Cliente importante, entrega prioritaria',
+      },
+      // Entrega en proceso - para probar tracking
+      {
+        ruta: rutas[0]._id,
+        conductor: conductores[0]._id,
+        vehiculo: vehiculos[0]._id,
+        cliente: {
+          nombre: 'Farmacia San José',
+          direccion: 'Av. América N25-45, Quito',
+          telefono: '0998765432',
+          email: 'farmacia@sanjose.ec',
+          coordenadas: {
+            latitud: -0.2,
+            longitud: -78.5,
+          },
+        },
+        origen: {
+          nombre: 'Bodega Central Quito',
+          direccion: 'Av. 10 de Agosto N35-120, Quito',
+          coordenadas: {
+            latitud: -0.180653,
+            longitud: -78.467834,
+          },
+        },
+        productos: [
+          {
+            producto: productos[5]._id,
+            cantidadProgramada: 50,
+            cantidadEntregada: 0,
+          },
+        ],
+        estado: 'en_proceso',
+        fecha_programada: new Date('2026-02-03T09:00:00'),
+        fecha_inicio: new Date('2026-02-03T09:15:00'),
+        trackingActivo: true,
+        distanciaTotal: 8.5,
+        tiempoEstimadoLlegada: 30,
+        ubicacionActual: {
+          latitud: -0.185,
+          longitud: -78.48,
+          nombreUbicacion: 'Sector La Mariscal, Quito',
+          ultimaActualizacion: new Date(),
+        },
+        tracking: [
+          {
+            fecha: new Date('2026-02-03T09:15:00'),
+            latitud: -0.180653,
+            longitud: -78.467834,
+            nombreUbicacion: 'Bodega Central Quito',
+            velocidad: 0,
+            porcentajeRecorrido: 0,
+          },
+          {
+            fecha: new Date('2026-02-03T09:25:00'),
+            latitud: -0.185,
+            longitud: -78.48,
+            nombreUbicacion: 'Sector La Mariscal, Quito',
+            velocidad: 35,
+            porcentajeRecorrido: 25,
+          },
+        ],
+        observaciones: 'Medicamentos urgentes',
+      },
+      // Entrega completada
+      {
+        ruta: rutas[1]._id,
+        conductor: conductores[1]._id,
+        vehiculo: vehiculos[1]._id,
+        cliente: {
+          nombre: 'Supermercado La Favorita',
+          direccion: 'Av. Francisco de Orellana, Guayaquil',
+          telefono: '0429876543',
+          email: 'bodega@favorita.com',
+          coordenadas: {
+            latitud: -2.170833,
+            longitud: -79.890553,
+          },
+        },
+        origen: {
+          nombre: 'Bodega Puerto Guayaquil',
+          direccion: 'Av. de las Américas Km 6.5, Guayaquil',
+          coordenadas: {
+            latitud: -2.203816,
+            longitud: -79.897453,
+          },
+        },
+        productos: [
+          {
+            producto: productos[2]._id,
+            cantidadProgramada: 50,
+            cantidadEntregada: 50,
+          },
+          {
+            producto: productos[3]._id,
+            cantidadProgramada: 30,
+            cantidadEntregada: 30,
+          },
+        ],
+        estado: 'entregado',
+        fecha_programada: new Date('2026-02-04T10:00:00'),
+        fecha_inicio: new Date('2026-02-04T09:55:00'),
+        fecha_entrega: new Date('2026-02-04T11:20:00'),
+        distanciaTotal: 8.2,
+        distanciaRecorrida: 8.2,
+        tiempoEstimadoLlegada: 0,
+        tracking: [
+          {
+            fecha: new Date('2026-02-04T10:00:00'),
+            latitud: -2.203816,
+            longitud: -79.897453,
+            nombreUbicacion: 'Bodega Puerto Guayaquil',
+            velocidad: 0,
+            porcentajeRecorrido: 0,
+          },
+          {
+            fecha: new Date('2026-02-04T10:25:00'),
+            latitud: -2.19,
+            longitud: -79.893,
+            nombreUbicacion: 'Kennedy Norte, Guayaquil',
+            velocidad: 45,
+            porcentajeRecorrido: 50,
+          },
+          {
+            fecha: new Date('2026-02-04T11:15:00'),
+            latitud: -2.170833,
+            longitud: -79.890553,
+            nombreUbicacion: 'Supermercado La Favorita',
+            velocidad: 0,
+            porcentajeRecorrido: 100,
+          },
+        ],
+        calificacion: 5,
+        observaciones: 'Entrega completada sin novedades',
+      },
+      // Entrega retrasada
+      {
+        ruta: rutas[0]._id,
+        conductor: conductores[0]._id,
+        vehiculo: vehiculos[0]._id,
+        cliente: {
+          nombre: 'Distribuidora del Valle',
+          direccion: 'Av. Galo Plaza Lasso, Quito',
+          telefono: '0987654321',
+          email: 'pedidos@delvalle.ec',
+          coordenadas: {
+            latitud: -0.12,
+            longitud: -78.45,
+          },
+        },
+        origen: {
+          nombre: 'Bodega Central Quito',
+          direccion: 'Av. 10 de Agosto N35-120, Quito',
+          coordenadas: {
+            latitud: -0.180653,
+            longitud: -78.467834,
+          },
+        },
+        productos: [
+          {
+            producto: productos[4]._id,
+            cantidadProgramada: 100,
+            cantidadEntregada: 0,
+          },
+        ],
+        estado: 'retrasado',
+        fecha_programada: new Date('2026-02-05T14:00:00'),
+        fecha_inicio: new Date('2026-02-05T15:30:00'),
+        distanciaTotal: 12.0,
+        distanciaRecorrida: 4.5,
+        tiempoEstimadoLlegada: 60,
+        motivoRetraso: 'Tráfico pesado en Av. 10 de Agosto',
+        ubicacionActual: {
+          latitud: -0.16,
+          longitud: -78.46,
+          nombreUbicacion: 'Sector El Batán, Quito',
+          ultimaActualizacion: new Date('2026-02-05T16:45:00'),
+        },
+        tracking: [
+          {
+            fecha: new Date('2026-02-05T15:30:00'),
+            latitud: -0.180653,
+            longitud: -78.467834,
+            nombreUbicacion: 'Bodega Central Quito',
+            velocidad: 0,
+            porcentajeRecorrido: 0,
+          },
+          {
+            fecha: new Date('2026-02-05T16:00:00'),
+            latitud: -0.17,
+            longitud: -78.462,
+            nombreUbicacion: 'Sector La Carolina',
+            velocidad: 15,
+            porcentajeRecorrido: 20,
+          },
+          {
+            fecha: new Date('2026-02-05T16:45:00'),
+            latitud: -0.16,
+            longitud: -78.46,
+            nombreUbicacion: 'Sector El Batán, Quito',
+            velocidad: 8,
+            porcentajeRecorrido: 35,
+          },
+        ],
+        observaciones: 'Entrega demorada por congestión vehicular',
+      },
+      // Entrega en Cuenca - pendiente
+      {
+        ruta: rutas[2]._id,
+        conductor: conductores[1]._id,
+        vehiculo: vehiculos[1]._id,
+        cliente: {
+          nombre: 'Hospital del IESS Cuenca',
+          direccion: 'Av. Huayna Cápac y 12 de Abril, Cuenca',
+          telefono: '0978889999',
+          email: 'farmacia@iess.gob.ec',
+          coordenadas: {
+            latitud: -2.906889,
+            longitud: -79.010387,
+          },
+        },
+        origen: {
+          nombre: 'Bodega Sur Cuenca',
+          direccion: 'Av. Huayna Cápac 1-234, Cuenca',
+          coordenadas: {
+            latitud: -2.900128,
+            longitud: -79.005896,
+          },
+        },
+        productos: [
+          {
+            producto: productos[5]._id,
+            cantidadProgramada: 100,
+            cantidadEntregada: 0,
+          },
+        ],
+        estado: 'pendiente',
+        fecha_programada: new Date('2026-02-06T07:00:00'),
+        distanciaTotal: 5.3,
+        tiempoEstimadoLlegada: 20,
+        observaciones: 'Entrega de medicamentos - Prioridad Alta',
+      },
+    ];
+
+    const entregas = [];
+    for (const entregaData of entregasData) {
+      try {
+        const entrega = await Entrega.create(entregaData);
+        entregas.push(entrega);
+        console.log(
+          `  ✓ Entrega ${entrega.numeroEntrega} creada - Cliente: ${entrega.cliente.nombre}`,
+        );
+      } catch (error) {
+        console.error(`  ✗ Error en entrega: ${error.message}`);
+      }
+    }
+
+    console.log(`✅ ${entregas.length} entregas creadas\n`);
+
     // ========== RESUMEN ==========
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📊 RESUMEN DE DATOS CREADOS');
@@ -607,6 +911,7 @@ const seedDatabase = async () => {
     console.log(`🚚 Vehículos: ${vehiculos.length}`);
     console.log(`🗺️  Rutas: ${rutas.length}`);
     console.log(`📊 Movimientos: ${movimientos.length}`);
+    console.log(`📬 Entregas: ${entregas.length}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     console.log('👤 CREDENCIALES DE ACCESO:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -615,6 +920,13 @@ const seedDatabase = async () => {
     console.log('Conductor 1:  conductor1@logistica.com / cond123');
     console.log('Conductor 2:  conductor2@logistica.com / cond123');
     console.log('Operador:     operador@logistica.com / oper123');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    console.log('📬 ENTREGAS PARA PRUEBA:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('• 2 Pendientes (listas para iniciar)');
+    console.log('• 1 En Proceso (con tracking activo)');
+    console.log('• 1 Entregada (historial completo)');
+    console.log('• 1 Retrasada (para ver alertas)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     // Cerrar conexión

@@ -40,8 +40,8 @@ const usuarioSchema = new mongoose.Schema(
       type: String,
       trim: true,
       match: [
-        /^[0-9]{10}$/,
-        'El teléfono debe contener exactamente 10 dígitos',
+        /^09[0-9]{8}$/,
+        'El teléfono debe ser un número ecuatoriano válido (ej: 0991234567)',
       ],
     },
     activo: {

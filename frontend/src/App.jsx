@@ -10,6 +10,7 @@ import Usuarios from './pages/Usuarios';
 import Bodegas from './pages/Bodegas';
 import Vehiculos from './pages/Vehiculos';
 import Rutas from './pages/Rutas';
+import Entregas from './pages/Entregas';
 import NotFound from './pages/NotFound';
 
 // Layout
@@ -41,6 +42,7 @@ function App() {
           <Route path="/bodegas" element={<Bodegas />} />
           <Route path="/vehiculos" element={<Vehiculos />} />
           <Route path="/rutas" element={<Rutas />} />
+          <Route path="/entregas" element={<Entregas />} />
         </Route>
 
         {/* Ruta 404 */}

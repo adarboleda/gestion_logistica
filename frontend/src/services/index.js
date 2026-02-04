@@ -321,6 +321,76 @@ export const rutaService = {
   },
 };
 
+// ==================== ENTREGAS ====================
+
+export const entregaService = {
+  // Obtener todas
+  obtenerTodas: async (params = {}) => {
+    const response = await api.get('/entregas', { params });
+    return response.data;
+  },
+
+  // Obtener por ID
+  obtenerPorId: async (id) => {
+    const response = await api.get(`/entregas/${id}`);
+    return response.data;
+  },
+
+  // Crear
+  crear: async (entregaData) => {
+    const response = await api.post('/entregas', entregaData);
+    return response.data;
+  },
+
+  // Crear desde ruta
+  crearDesdeRuta: async (rutaId) => {
+    const response = await api.post(`/entregas/desde-ruta/${rutaId}`);
+    return response.data;
+  },
+
+  // Actualizar estado
+  actualizarEstado: async (id, data) => {
+    const response = await api.patch(`/entregas/${id}/estado`, data);
+    return response.data;
+  },
+
+  // Iniciar tracking
+  iniciarTracking: async (id) => {
+    const response = await api.post(`/entregas/${id}/iniciar-tracking`);
+    return response.data;
+  },
+
+  // Simular ubicación
+  simularUbicacion: async (id) => {
+    const response = await api.post(`/entregas/${id}/simular-ubicacion`);
+    return response.data;
+  },
+
+  // Obtener tracking
+  obtenerTracking: async (id) => {
+    const response = await api.get(`/entregas/${id}/tracking`);
+    return response.data;
+  },
+
+  // Completar entrega
+  completar: async (id, data) => {
+    const response = await api.post(`/entregas/${id}/completar`, data);
+    return response.data;
+  },
+
+  // Obtener historial
+  obtenerHistorial: async (params = {}) => {
+    const response = await api.get('/entregas/historial', { params });
+    return response.data;
+  },
+
+  // Eliminar
+  eliminar: async (id) => {
+    const response = await api.delete(`/entregas/${id}`);
+    return response.data;
+  },
+};
+
 // ==================== BODEGAS ====================
 
 export const bodegaService = {

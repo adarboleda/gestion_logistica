@@ -9,6 +9,7 @@ import movimientoRoutes from './src/routes/movimiento.routes.js';
 import bodegaRoutes from './src/routes/bodega.routes.js';
 import vehiculoRoutes from './src/routes/vehiculo.routes.js';
 import rutaRoutes from './src/routes/ruta.routes.js';
+import entregaRoutes from './src/routes/entrega.routes.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -46,6 +47,7 @@ app.use('/api/movimientos', movimientoRoutes);
 app.use('/api/bodegas', bodegaRoutes);
 app.use('/api/vehiculos', vehiculoRoutes);
 app.use('/api/rutas', rutaRoutes);
+app.use('/api/entregas', entregaRoutes);
 
 // Manejo de errores 404
 app.use((req, res) => {

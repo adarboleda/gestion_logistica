@@ -29,7 +29,17 @@ const bodegaSchema = new mongoose.Schema(
       codigoPostal: {
         type: String,
         trim: true,
-        match: [/^[0-9]{5}$/, 'El código postal debe tener 5 dígitos'],
+        validate: {
+          validator: function (v) {
+            // Validar formato: exactamente 6 dígitos
+            if (!/^\d{6}$/.test(v)) return false;
+            // Validar rango de provincia: los dos primeros dígitos deben estar entre 01 y 24
+            const provincia = parseInt(v.substring(0, 2));
+            return provincia >= 1 && provincia <= 24;
+          },
+          message:
+            'El código postal debe tener 6 dígitos y los dos primeros deben corresponder a una provincia válida de Ecuador (01-24)',
+        },
       },
       coordenadas: {
         latitud: {

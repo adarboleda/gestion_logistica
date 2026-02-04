@@ -194,6 +194,47 @@ function Movimientos() {
     );
   };
 
+  const bodegaTemplate = (rowData) => {
+    // Para transferencias mostrar origen -> destino
+    if (rowData.tipo === 'transferencia') {
+      return (
+        <div>
+          <div className="text-sm">
+            <span className="font-semibold">De:</span>{' '}
+            {rowData.bodegaOrigen?.nombre || 'N/A'}
+          </div>
+          <div className="text-sm">
+            <span className="font-semibold">A:</span>{' '}
+            {rowData.bodegaDestino?.nombre || 'N/A'}
+          </div>
+        </div>
+      );
+    }
+    // Para entradas/salidas mostrar bodega del producto
+    return (
+      rowData.producto?.bodega?.nombre ||
+      rowData.bodegaOrigen?.nombre ||
+      rowData.bodegaDestino?.nombre ||
+      'N/A'
+    );
+  };
+
+  const usuarioTemplate = (rowData) => {
+    return (
+      <div>
+        <div className="font-semibold">
+          {rowData.usuario_responsable?.nombre || 'N/A'}
+        </div>
+        <div
+          className="text-sm"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          {rowData.usuario_responsable?.email || ''}
+        </div>
+      </div>
+    );
+  };
+
   const leftToolbarTemplate = () => {
     return (
       <Button
@@ -314,10 +355,9 @@ function Movimientos() {
             style={{ minWidth: '200px' }}
           />
           <Column
-            field="bodega.nombre"
             header="Bodega"
-            sortable
-            style={{ minWidth: '150px' }}
+            body={bodegaTemplate}
+            style={{ minWidth: '180px' }}
           />
           <Column
             field="cantidad"
@@ -339,10 +379,9 @@ function Movimientos() {
             style={{ minWidth: '150px' }}
           />
           <Column
-            field="usuario.nombre"
             header="Usuario"
-            sortable
-            style={{ minWidth: '150px' }}
+            body={usuarioTemplate}
+            style={{ minWidth: '180px' }}
           />
         </DataTable>
       </Card>

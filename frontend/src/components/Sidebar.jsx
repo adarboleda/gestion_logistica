@@ -52,6 +52,11 @@ function Sidebar() {
           icon: 'pi pi-map',
           path: '/rutas',
         },
+        {
+          label: 'Entregas',
+          icon: 'pi pi-truck',
+          path: '/entregas',
+        },
       ],
     },
     {

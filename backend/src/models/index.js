@@ -7,8 +7,9 @@ import Producto from './Producto.js';
 import Movimiento from './Movimiento.js';
 import Vehiculo from './Vehiculo.js';
 import Ruta from './Ruta.js';
+import Entrega from './Entrega.js';
 
-export { Usuario, Bodega, Producto, Movimiento, Vehiculo, Ruta };
+export { Usuario, Bodega, Producto, Movimiento, Vehiculo, Ruta, Entrega };
 
 export default {
   Usuario,
@@ -17,4 +18,5 @@ export default {
   Movimiento,
   Vehiculo,
   Ruta,
+  Entrega,
 };
