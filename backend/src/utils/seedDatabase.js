@@ -292,155 +292,10 @@ const seedDatabase = async () => {
 
     console.log(`✅ ${vehiculos.length} vehículos creados\n`);
 
-    // ========== CREAR RUTAS ==========
-    console.log('🗺️  Creando rutas...');
-
-    // NOTA: Ninguna ruta está en estado 'completada' para probar el flujo
-    // Las entregas se crean automáticamente cuando la ruta pasa a 'completada'
-    const rutasData = [
-      {
-        origen: {
-          nombre: 'Bodega Central Quito',
-          direccion: 'Av. 10 de Agosto N35-120, Quito',
-          coordenadas: {
-            latitud: -0.180653,
-            longitud: -78.467834,
-          },
-        },
-        destino: {
-          nombre: 'Cliente Zona Norte Quito',
-          direccion: 'Av. Eloy Alfaro N45-12, Quito',
-          coordenadas: {
-            latitud: -0.150207,
-            longitud: -78.478431,
-          },
-          contacto: {
-            nombre: 'Roberto Gómez',
-            telefono: '0981234567',
-            email: 'roberto@cliente.com',
-          },
-        },
-        fecha_programada: new Date('2026-02-05T08:00:00'),
-        vehiculo: vehiculos[0]._id,
-        conductor: conductores[0]._id,
-        lista_productos: [
-          {
-            producto: productos[0]._id,
-            cantidad: 10,
-            entregado: 0,
-          },
-          {
-            producto: productos[1]._id,
-            cantidad: 20,
-            entregado: 0,
-          },
-        ],
-        estado: 'planificada',
-        prioridad: 'alta',
-        distancia_km: 15.5,
-        tiempo_estimado_horas: 1.5,
-        observaciones: 'Cliente importante, entrega prioritaria',
-      },
-      {
-        origen: {
-          nombre: 'Bodega Puerto Guayaquil',
-          direccion: 'Av. de las Américas Km 6.5, Guayaquil',
-          coordenadas: {
-            latitud: -2.203816,
-            longitud: -79.897453,
-          },
-        },
-        destino: {
-          nombre: 'Supermercado La Favorita',
-          direccion: 'Av. Francisco de Orellana, Guayaquil',
-          coordenadas: {
-            latitud: -2.170833,
-            longitud: -79.890553,
-          },
-          contacto: {
-            nombre: 'Andrea López',
-            telefono: '0929876543',
-            email: 'andrea@favorita.com',
-          },
-        },
-        fecha_programada: new Date('2026-02-06T10:00:00'),
-        vehiculo: vehiculos[1]._id,
-        conductor: conductores[1]._id,
-        lista_productos: [
-          {
-            producto: productos[2]._id,
-            cantidad: 50,
-            entregado: 0,
-          },
-          {
-            producto: productos[3]._id,
-            cantidad: 30,
-            entregado: 0,
-          },
-        ],
-        estado: 'planificada',
-        prioridad: 'media',
-        distancia_km: 8.2,
-        tiempo_estimado_horas: 0.5,
-        observaciones: 'Entrega de alimentos',
-      },
-      {
-        origen: {
-          nombre: 'Bodega Central Quito',
-          direccion: 'Av. 10 de Agosto N35-120, Quito',
-          coordenadas: {
-            latitud: -0.180653,
-            longitud: -78.467834,
-          },
-        },
-        destino: {
-          nombre: 'Hospital del IESS Quito',
-          direccion: 'Av. Amazonas y 10 de Agosto, Quito',
-          coordenadas: {
-            latitud: -0.190889,
-            longitud: -78.480387,
-          },
-          contacto: {
-            nombre: 'Dr. Carlos Mendoza',
-            telefono: '0978889999',
-            email: 'cmendoza@iess.gob.ec',
-          },
-        },
-        fecha_programada: new Date('2026-02-05T14:00:00'),
-        vehiculo: vehiculos[0]._id,
-        conductor: conductores[0]._id,
-        lista_productos: [
-          {
-            producto: productos[5]._id,
-            cantidad: 100,
-            entregado: 0,
-          },
-        ],
-        estado: 'en_transito',
-        prioridad: 'urgente',
-        distancia_km: 5.3,
-        tiempo_estimado_horas: 0.5,
-        fecha_inicio_real: new Date('2026-02-05T13:55:00'),
-        tracking: [
-          {
-            fecha: new Date('2026-02-05T13:55:00'),
-            latitud: -0.180653,
-            longitud: -78.467834,
-            velocidad: 0,
-            observacion: 'Salida de bodega',
-          },
-        ],
-        observaciones: 'Entrega urgente de medicamentos',
-      },
-    ];
-
-    const rutas = [];
-    for (const rutaData of rutasData) {
-      const ruta = await Ruta.create(rutaData);
-      rutas.push(ruta);
-    }
-
-    console.log(`✅ ${rutas.length} rutas creadas\n`);
+    // ========== RUTAS ==========
+    // NOTA: No se crean rutas para que el usuario las cree desde la interfaz
+    // Las entregas se crean automáticamente cuando una ruta pasa a estado 'completada'
+    console.log('🗺️  No se crean rutas - créalas desde la interfaz\n');
 
     // ========== CREAR MOVIMIENTOS ==========
     console.log('📊 Creando movimientos de inventario...');
@@ -527,7 +382,7 @@ const seedDatabase = async () => {
     console.log(`🏢 Bodegas: ${bodegas.length}`);
     console.log(`📦 Productos: ${productos.length}`);
     console.log(`🚚 Vehículos: ${vehiculos.length}`);
-    console.log(`🗺️  Rutas: ${rutas.length}`);
+    console.log(`🗺️  Rutas: 0 (crear desde interfaz)`);
     console.log(`📊 Movimientos: ${movimientos.length}`);
     console.log(`📬 Entregas: 0 (se crean al completar rutas)`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');

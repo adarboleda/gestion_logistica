@@ -280,35 +280,38 @@ function Movimientos() {
 
   const rightToolbarTemplate = () => {
     return (
-      <span
-        className="p-input-icon-left"
-        style={{ position: 'relative', display: 'inline-block' }}
-      >
-        <i
-          className="pi pi-search"
-          style={{
-            position: 'absolute',
-            left: '12px',
-            top: '65%',
-            transform: 'translateY(-50%)',
-            color: '#6b7280',
-          }}
-        />
-        <InputText
-          value={globalFilter}
-          onChange={(e) => {
-            setGlobalFilter(e.target.value);
-            setFilters({
-              global: {
-                value: e.target.value,
-                matchMode: FilterMatchMode.CONTAINS,
-              },
-            });
-          }}
-          placeholder="Buscar movimientos..."
-          style={{ width: '300px', paddingLeft: '36px' }}
-        />
-      </span>
+      <div className="w-full md:w-auto">
+        <span
+          className="p-input-icon-left w-full"
+          style={{ position: 'relative', display: 'inline-block' }}
+        >
+          <i
+            className="pi pi-search"
+            style={{
+              position: 'absolute',
+              left: '12px',
+              top: '65%',
+              transform: 'translateY(-50%)',
+              color: '#6b7280',
+            }}
+          />
+          <InputText
+            value={globalFilter}
+            onChange={(e) => {
+              setGlobalFilter(e.target.value);
+              setFilters({
+                global: {
+                  value: e.target.value,
+                  matchMode: FilterMatchMode.CONTAINS,
+                },
+              });
+            }}
+            placeholder="Buscar..."
+            className="w-full md:w-64"
+            style={{ paddingLeft: '36px' }}
+          />
+        </span>
+      </div>
     );
   };
 

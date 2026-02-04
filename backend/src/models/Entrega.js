@@ -43,7 +43,6 @@ const entregaSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Ruta',
       required: [true, 'La ruta es obligatoria'],
-      index: true,
     },
     conductor: {
       type: mongoose.Schema.Types.ObjectId,

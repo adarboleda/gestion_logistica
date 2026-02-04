@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -606,35 +605,32 @@ function Rutas() {
       <Toast ref={toast} />
       <ConfirmDialog />
 
-      <Card
-        title="Gestión de Rutas"
-        className="shadow-lg mb-4"
-        style={{ backgroundColor: 'var(--color-surface)' }}
-      >
-        <Toolbar
-          left={() => (
-            <Button
-              label="Nueva Ruta"
-              icon="pi pi-plus"
-              severity="success"
-              onClick={abrirDialogoCrear}
-            />
-          )}
-          right={() => (
-            <Button
-              icon="pi pi-refresh"
-              outlined
-              onClick={cargarRutas}
-              tooltip="Actualizar"
-            />
-          )}
-          className="mb-4"
-          style={{
-            backgroundColor: 'var(--color-accent)',
-            border: '1px solid var(--color-border)',
-          }}
-        />
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Gestión de Rutas</h1>
+          <p className="text-gray-600 text-sm">
+            Planifica y gestiona las rutas de entrega
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            label="Nueva Ruta"
+            icon="pi pi-plus"
+            severity="success"
+            onClick={abrirDialogoCrear}
+          />
+          <Button
+            icon="pi pi-refresh"
+            outlined
+            onClick={cargarRutas}
+            tooltip="Actualizar"
+          />
+        </div>
+      </div>
 
+      {/* Tabla de Rutas */}
+      <div className="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
         <DataTable
           value={rutas}
           loading={loadingRutas}
@@ -643,7 +639,7 @@ function Rutas() {
           rowsPerPageOptions={[5, 10, 25]}
           emptyMessage="No hay rutas registradas"
           stripedRows
-          style={{ border: '1px solid var(--color-border)' }}
+          responsiveLayout="scroll"
         >
           <Column
             field="numeroRuta"
@@ -697,7 +693,7 @@ function Rutas() {
             style={{ minWidth: '150px' }}
           />
         </DataTable>
-      </Card>
+      </div>
 
       {/* Dialog de Tracking */}
       <Dialog
@@ -836,26 +832,17 @@ function Rutas() {
         style={{ width: '800px', maxWidth: '95vw' }}
         onHide={() => setShowDialog(false)}
         modal
+        className="p-fluid"
       >
-        <div className="grid gap-4">
+        <div className="flex flex-col gap-4">
           {/* Sección Origen */}
-          <Card
-            title={
-              <span>
-                <i className="pi pi-warehouse mr-2"></i>Origen
-              </span>
-            }
-            className="shadow-sm"
-            style={{
-              backgroundColor: 'var(--color-accent)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            <div className="flex flex-column gap-2">
-              <label
-                className="font-semibold"
-                style={{ color: 'var(--color-secondary)' }}
-              >
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <i className="pi pi-warehouse"></i>
+              Origen
+            </h3>
+            <div className="flex flex-col gap-2">
+              <label className="font-medium text-gray-700">
                 Bodega de Origen *
               </label>
               <Dropdown
@@ -871,11 +858,11 @@ function Rutas() {
                 emptyMessage="No hay bodegas disponibles"
                 className="w-full"
                 itemTemplate={(option) => (
-                  <div className="flex align-items-center gap-2">
-                    <i className="pi pi-building"></i>
+                  <div className="flex items-center gap-2">
+                    <i className="pi pi-building text-gray-500"></i>
                     <div>
-                      <div className="font-semibold">{option.nombre}</div>
-                      <div className="text-sm text-500">
+                      <div className="font-medium">{option.nombre}</div>
+                      <div className="text-sm text-gray-500">
                         {option.direccion?.ciudad}, {option.direccion?.estado}
                       </div>
                     </div>
@@ -883,163 +870,127 @@ function Rutas() {
                 )}
               />
               {formData.bodegaOrigen && (
-                <div className="text-sm text-500 mt-1">
-                  <i className="pi pi-map-marker mr-1"></i>
+                <div className="text-sm text-gray-500 mt-1 flex items-center gap-1">
+                  <i className="pi pi-map-marker"></i>
                   {formData.bodegaOrigen.direccion?.calle},{' '}
                   {formData.bodegaOrigen.direccion?.ciudad}
                 </div>
               )}
             </div>
-          </Card>
+          </div>
 
           {/* Sección Destino */}
-          <Card
-            title={
-              <span>
-                <i className="pi pi-map mr-2"></i>Destino
-              </span>
-            }
-            className="shadow-sm"
-            style={{
-              backgroundColor: 'var(--color-accent)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            <div className="flex flex-column gap-3">
-              <div className="grid">
-                <div className="col-12 md:col-6">
-                  <label
-                    className="font-semibold block mb-2"
-                    style={{ color: 'var(--color-secondary)' }}
-                  >
-                    Nombre del Destino *
-                  </label>
-                  <InputText
-                    value={formData.destino.nombre}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        destino: { ...formData.destino, nombre: e.target.value },
-                      })
-                    }
-                    placeholder="Ej: Cliente ABC, Sucursal Norte"
-                    className="w-full"
-                  />
-                </div>
-                <div className="col-12 md:col-6">
-                  <label
-                    className="font-semibold block mb-2"
-                    style={{ color: 'var(--color-secondary)' }}
-                  >
-                    Dirección *
-                  </label>
-                  <InputText
-                    value={formData.destino.direccion}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        destino: {
-                          ...formData.destino,
-                          direccion: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="Dirección completa del destino"
-                    className="w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-3">
-                <label
-                  className="font-semibold block mb-2"
-                  style={{ color: 'var(--color-secondary)' }}
-                >
-                  <i className="pi pi-user mr-1"></i>
-                  Contacto en Destino (Opcional)
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <i className="pi pi-map"></i>
+              Destino
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label className="font-medium text-gray-700">
+                  Nombre del Destino *
                 </label>
-                <div className="grid">
-                  <div className="col-12 md:col-4">
-                    <InputText
-                      value={formData.destino.contacto.nombre}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          destino: {
-                            ...formData.destino,
-                            contacto: {
-                              ...formData.destino.contacto,
-                              nombre: e.target.value,
-                            },
-                          },
-                        })
-                      }
-                      placeholder="Nombre del contacto"
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="col-12 md:col-4">
-                    <InputText
-                      value={formData.destino.contacto.telefono}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          destino: {
-                            ...formData.destino,
-                            contacto: {
-                              ...formData.destino.contacto,
-                              telefono: e.target.value,
-                            },
-                          },
-                        })
-                      }
-                      placeholder="Teléfono"
-                      className="w-full"
-                    />
-                  </div>
-                  <div className="col-12 md:col-4">
-                    <InputText
-                      value={formData.destino.contacto.email}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          destino: {
-                            ...formData.destino,
-                            contacto: {
-                              ...formData.destino.contacto,
-                              email: e.target.value,
-                            },
-                          },
-                        })
-                      }
-                      placeholder="Email"
-                      className="w-full"
-                    />
-                  </div>
-                </div>
+                <InputText
+                  value={formData.destino.nombre}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      destino: { ...formData.destino, nombre: e.target.value },
+                    })
+                  }
+                  placeholder="Ej: Cliente ABC"
+                  className="w-full"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="font-medium text-gray-700">Dirección *</label>
+                <InputText
+                  value={formData.destino.direccion}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      destino: {
+                        ...formData.destino,
+                        direccion: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Dirección completa"
+                  className="w-full"
+                />
               </div>
             </div>
-          </Card>
+
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <label className="font-medium text-gray-700 mb-2 block">
+                <i className="pi pi-user mr-1"></i>
+                Contacto en Destino (Opcional)
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <InputText
+                  value={formData.destino.contacto.nombre}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      destino: {
+                        ...formData.destino,
+                        contacto: {
+                          ...formData.destino.contacto,
+                          nombre: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  placeholder="Nombre"
+                  className="w-full"
+                />
+                <InputText
+                  value={formData.destino.contacto.telefono}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      destino: {
+                        ...formData.destino,
+                        contacto: {
+                          ...formData.destino.contacto,
+                          telefono: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  placeholder="Teléfono"
+                  className="w-full"
+                />
+                <InputText
+                  value={formData.destino.contacto.email}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      destino: {
+                        ...formData.destino,
+                        contacto: {
+                          ...formData.destino.contacto,
+                          email: e.target.value,
+                        },
+                      },
+                    })
+                  }
+                  placeholder="Email"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Sección Asignación */}
-          <Card
-            title={
-              <span>
-                <i className="pi pi-cog mr-2"></i>Asignación
-              </span>
-            }
-            className="shadow-sm"
-            style={{
-              backgroundColor: 'var(--color-accent)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            <div className="grid">
-              <div className="col-12 md:col-6">
-                <label
-                  className="font-semibold block mb-2"
-                  style={{ color: 'var(--color-secondary)' }}
-                >
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <i className="pi pi-cog"></i>
+              Asignación
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="flex flex-col gap-2 md:col-span-2">
+                <label className="font-medium text-gray-700">
                   <i className="pi pi-car mr-1"></i>
                   Vehículo *
                 </label>
@@ -1053,38 +1004,28 @@ function Rutas() {
                   placeholder="Seleccione un vehículo"
                   filter
                   showClear
-                  emptyMessage="No hay vehículos disponibles con conductor"
+                  emptyMessage="No hay vehículos disponibles"
                   className="w-full"
                   itemTemplate={(option) => (
-                    <div className="flex align-items-center gap-2">
-                      <i className="pi pi-car"></i>
+                    <div className="flex items-center gap-2">
+                      <i className="pi pi-car text-gray-500"></i>
                       <div>
-                        <div className="font-semibold">
+                        <div className="font-medium">
                           {option.placa} - {option.marca} {option.modelo}
                         </div>
-                        <div className="text-sm text-500">
-                          <i className="pi pi-user mr-1"></i>
-                          Conductor: {option.conductor_asignado?.nombre || 'N/A'}
+                        <div className="text-sm text-gray-500">
+                          Conductor:{' '}
+                          {option.conductor_asignado?.nombre || 'N/A'}
                         </div>
                       </div>
                     </div>
                   )}
                 />
-                {formData.vehiculo && (
-                  <Message
-                    severity="info"
-                    className="mt-2 w-full"
-                    text={`Conductor asignado: ${formData.vehiculo.conductor_asignado?.nombre}`}
-                  />
-                )}
               </div>
-              <div className="col-12 md:col-3">
-                <label
-                  className="font-semibold block mb-2"
-                  style={{ color: 'var(--color-secondary)' }}
-                >
+              <div className="flex flex-col gap-2">
+                <label className="font-medium text-gray-700">
                   <i className="pi pi-calendar mr-1"></i>
-                  Fecha Programada *
+                  Fecha *
                 </label>
                 <Calendar
                   value={formData.fecha_programada}
@@ -1100,11 +1041,8 @@ function Rutas() {
                   className="w-full"
                 />
               </div>
-              <div className="col-12 md:col-3">
-                <label
-                  className="font-semibold block mb-2"
-                  style={{ color: 'var(--color-secondary)' }}
-                >
+              <div className="flex flex-col gap-2">
+                <label className="font-medium text-gray-700">
                   <i className="pi pi-flag mr-1"></i>
                   Prioridad
                 </label>
@@ -1119,11 +1057,16 @@ function Rutas() {
               </div>
             </div>
 
-            <div className="mt-3">
-              <label
-                className="font-semibold block mb-2"
-                style={{ color: 'var(--color-secondary)' }}
-              >
+            {formData.vehiculo && (
+              <Message
+                severity="info"
+                className="mt-3"
+                text={`Conductor: ${formData.vehiculo.conductor_asignado?.nombre}`}
+              />
+            )}
+
+            <div className="mt-4">
+              <label className="font-medium text-gray-700 block mb-2">
                 Observaciones
               </label>
               <InputTextarea
@@ -1136,31 +1079,23 @@ function Rutas() {
                 className="w-full"
               />
             </div>
-          </Card>
+          </div>
 
           {/* Sección Productos */}
-          <Card
-            title={
-              <span>
-                <i className="pi pi-box mr-2"></i>Productos a Transportar
-              </span>
-            }
-            className="shadow-sm"
-            style={{
-              backgroundColor: 'var(--color-accent)',
-              border: '1px solid var(--color-border)',
-            }}
-          >
-            <div className="flex align-items-center justify-content-between mb-3">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <i className="pi pi-box"></i>
+              Productos a Transportar
+            </h3>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
               <div>
                 {productosSeleccionados.length > 0 ? (
-                  <div>
+                  <div className="flex flex-wrap items-center gap-2">
                     <Tag
-                      value={`${productosSeleccionados.length} producto(s) seleccionado(s)`}
+                      value={`${productosSeleccionados.length} producto(s)`}
                       severity="success"
-                      className="mr-2"
                     />
-                    <span className="text-sm text-500">
+                    <span className="text-sm text-gray-500">
                       Total:{' '}
                       {productosSeleccionados.reduce(
                         (sum, p) => sum + (p.cantidadRuta || 1),
@@ -1170,7 +1105,7 @@ function Rutas() {
                     </span>
                   </div>
                 ) : (
-                  <span className="text-500">
+                  <span className="text-gray-500">
                     No hay productos seleccionados
                   </span>
                 )}
@@ -1180,58 +1115,67 @@ function Rutas() {
                 icon="pi pi-plus"
                 onClick={abrirDialogoProductos}
                 outlined
+                size="small"
               />
             </div>
 
             {productosSeleccionados.length > 0 && (
-              <DataTable
-                value={productosSeleccionados}
-                size="small"
-                stripedRows
-              >
-                <Column
-                  field="nombre"
-                  header="Producto"
-                  body={nombreProductoTemplate}
-                />
-                <Column field="categoria" header="Categoría" />
-                <Column
-                  header="Cantidad"
-                  body={cantidadTemplate}
-                  style={{ width: '180px' }}
-                />
-                <Column
-                  body={(rowData) => (
-                    <Button
-                      icon="pi pi-trash"
-                      rounded
-                      outlined
-                      severity="danger"
-                      size="small"
-                      onClick={() =>
-                        setProductosSeleccionados(
-                          productosSeleccionados.filter(
-                            (p) => p._id !== rowData._id,
-                          ),
-                        )
-                      }
-                    />
-                  )}
-                  style={{ width: '60px' }}
-                />
-              </DataTable>
+              <div className="overflow-x-auto">
+                <DataTable
+                  value={productosSeleccionados}
+                  size="small"
+                  stripedRows
+                  className="text-sm"
+                >
+                  <Column
+                    field="nombre"
+                    header="Producto"
+                    body={nombreProductoTemplate}
+                  />
+                  <Column
+                    field="categoria"
+                    header="Categoría"
+                    className="hidden md:table-cell"
+                  />
+                  <Column
+                    header="Cantidad"
+                    body={cantidadTemplate}
+                    style={{ width: '150px' }}
+                  />
+                  <Column
+                    body={(rowData) => (
+                      <Button
+                        icon="pi pi-trash"
+                        rounded
+                        outlined
+                        severity="danger"
+                        size="small"
+                        onClick={() =>
+                          setProductosSeleccionados(
+                            productosSeleccionados.filter(
+                              (p) => p._id !== rowData._id,
+                            ),
+                          )
+                        }
+                      />
+                    )}
+                    style={{ width: '50px' }}
+                  />
+                </DataTable>
+              </div>
             )}
-          </Card>
+          </div>
         </div>
 
         {/* Botones del Dialog */}
-        <div className="flex justify-content-end gap-2 mt-4">
+        <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-4 pt-4 border-t border-gray-200">
           <Button
             label="Cancelar"
             icon="pi pi-times"
             outlined
             onClick={() => setShowDialog(false)}
             disabled={loading}
+            className="w-full sm:w-auto"
           />
           <Button
             label="Crear Ruta"
@@ -1239,6 +1183,7 @@ function Rutas() {
             onClick={handleSubmit}
             loading={loading}
             disabled={loading}
+            className="w-full sm:w-auto"
           />
         </div>
       </Dialog>
