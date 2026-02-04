@@ -36,6 +36,7 @@ export const obtenerVehiculos = async (req, res) => {
     };
 
     const vehiculos = await Vehiculo.find(filtros)
+      .populate('conductor_asignado', 'nombre email telefono rol')
       .limit(options.limit)
       .skip((options.page - 1) * options.limit)
       .sort(options.sort);
@@ -71,9 +72,9 @@ export const obtenerVehiculos = async (req, res) => {
  */
 export const obtenerVehiculosDisponibles = async (req, res) => {
   try {
-    const vehiculos = await Vehiculo.find({ estado: 'disponible' }).sort({
-      placa: 1,
-    });
+    const vehiculos = await Vehiculo.find({ estado: 'disponible' })
+      .populate('conductor_asignado', 'nombre email telefono rol')
+      .sort({ placa: 1 });
 
     res.status(200).json({
       success: true,
@@ -96,7 +97,10 @@ export const obtenerVehiculosDisponibles = async (req, res) => {
  */
 export const obtenerVehiculoPorId = async (req, res) => {
   try {
-    const vehiculo = await Vehiculo.findById(req.params.id);
+    const vehiculo = await Vehiculo.findById(req.params.id).populate(
+      'conductor_asignado',
+      'nombre email telefono rol',
+    );
 
     if (!vehiculo) {
       return res.status(404).json({
@@ -132,9 +136,11 @@ export const crearVehiculo = async (req, res) => {
       modelo,
       año,
       tipo,
-      capacidad_kg,
-      capacidad_m3,
+      capacidad_carga,
+      unidad_capacidad,
       estado,
+      conductor_asignado,
+      kilometraje,
     } = req.body;
 
     // Validar que no exista un vehículo con la misma placa
@@ -154,10 +160,15 @@ export const crearVehiculo = async (req, res) => {
       modelo,
       año,
       tipo,
-      capacidad_kg,
-      capacidad_m3,
+      capacidad_carga,
+      unidad_capacidad: unidad_capacidad || 'kg',
       estado: estado || 'disponible',
+      conductor_asignado: conductor_asignado || null,
+      kilometraje: kilometraje || 0,
     });
+
+    // Poblar conductor asignado para la respuesta
+    await vehiculo.populate('conductor_asignado', 'nombre email telefono');
 
     res.status(201).json({
       success: true,
@@ -186,9 +197,11 @@ export const actualizarVehiculo = async (req, res) => {
       modelo,
       año,
       tipo,
-      capacidad_kg,
-      capacidad_m3,
+      capacidad_carga,
+      unidad_capacidad,
       estado,
+      conductor_asignado,
+      kilometraje,
     } = req.body;
 
     // Verificar que el vehículo existe
@@ -222,15 +235,20 @@ export const actualizarVehiculo = async (req, res) => {
         modelo,
         año,
         tipo,
-        capacidad_kg,
-        capacidad_m3,
+        capacidad_carga,
+        unidad_capacidad,
         estado,
+        conductor_asignado,
+        kilometraje,
       },
       {
         new: true,
         runValidators: true,
       },
     );
+
+    // Poblar conductor asignado para la respuesta
+    await vehiculo.populate('conductor_asignado', 'nombre email telefono');
 
     res.status(200).json({
       success: true,

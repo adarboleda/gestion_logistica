@@ -124,11 +124,17 @@ function Productos() {
   };
 
   const handleSubmit = async () => {
-    if (!formData.codigo || !formData.nombre || !formData.categoria) {
+    if (
+      !formData.codigo ||
+      !formData.nombre ||
+      !formData.categoria ||
+      !formData.bodega
+    ) {
       toast.current?.show({
         severity: 'warn',
         summary: 'Validación',
-        detail: 'Complete los campos requeridos',
+        detail:
+          'Complete los campos requeridos (código, nombre, categoría, bodega)',
         life: 3000,
       });
       return;

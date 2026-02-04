@@ -13,10 +13,12 @@ import { Tag } from 'primereact/tag';
 import { Toolbar } from 'primereact/toolbar';
 import { FilterMatchMode } from 'primereact/api';
 import api from '../services/api';
+import { usuarioService } from '../services';
 
 function Vehiculos() {
   const toast = useRef(null);
   const [vehiculos, setVehiculos] = useState([]);
+  const [conductores, setConductores] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -34,6 +36,8 @@ function Vehiculos() {
     capacidad_carga: 0,
     unidad_capacidad: 'kg',
     estado: 'disponible',
+    conductor_asignado: null,
+    kilometraje: 0,
   });
 
   const tiposVehiculo = [
@@ -56,21 +60,28 @@ function Vehiculos() {
   ];
 
   useEffect(() => {
-    cargarVehiculos();
+    cargarDatos();
   }, []);
 
-  const cargarVehiculos = async () => {
+  const cargarDatos = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/vehiculos');
-      if (response.data.success) {
-        setVehiculos(response.data.data.vehiculos);
+      const [respVehiculos, respConductores] = await Promise.all([
+        api.get('/vehiculos'),
+        usuarioService.obtenerPorRol('conductor'),
+      ]);
+
+      if (respVehiculos.data.success) {
+        setVehiculos(respVehiculos.data.data.vehiculos);
+      }
+      if (respConductores.success) {
+        setConductores(respConductores.data.usuarios);
       }
     } catch (error) {
       toast.current?.show({
         severity: 'error',
         summary: 'Error',
-        detail: 'No se pudieron cargar los vehículos',
+        detail: 'No se pudieron cargar los datos',
         life: 3000,
       });
     } finally {
@@ -95,6 +106,8 @@ function Vehiculos() {
       capacidad_carga: vehiculo.capacidad_carga,
       unidad_capacidad: vehiculo.unidad_capacidad || 'kg',
       estado: vehiculo.estado,
+      conductor_asignado: vehiculo.conductor_asignado?._id || null,
+      kilometraje: vehiculo.kilometraje || 0,
     });
     setEditMode(true);
     setShowDialog(true);
@@ -110,6 +123,8 @@ function Vehiculos() {
       capacidad_carga: 0,
       unidad_capacidad: 'kg',
       estado: 'disponible',
+      conductor_asignado: null,
+      kilometraje: 0,
     });
   };
 
@@ -141,7 +156,7 @@ function Vehiculos() {
           life: 3000,
         });
         setShowDialog(false);
-        cargarVehiculos();
+        cargarDatos();
       }
     } catch (error) {
       toast.current?.show({
@@ -177,7 +192,7 @@ function Vehiculos() {
           detail: 'Vehículo eliminado',
           life: 3000,
         });
-        cargarVehiculos();
+        cargarDatos();
       }
     } catch (error) {
       toast.current?.show({
@@ -562,6 +577,47 @@ function Vehiculos() {
               options={unidadesCapacidad}
               placeholder="Seleccione"
               className="w-full"
+            />
+          </div>
+
+          <div className="col-span-1">
+            <label
+              className="block mb-2 font-semibold"
+              style={{ color: 'var(--color-secondary)' }}
+            >
+              Conductor Asignado
+            </label>
+            <Dropdown
+              value={formData.conductor_asignado}
+              onChange={(e) =>
+                setFormData({ ...formData, conductor_asignado: e.value })
+              }
+              options={conductores.map((c) => ({
+                label: `${c.nombre} (${c.telefono || 'Sin teléfono'})`,
+                value: c._id,
+              }))}
+              placeholder="Seleccione conductor"
+              className="w-full"
+              showClear
+              filter
+            />
+          </div>
+
+          <div className="col-span-1">
+            <label
+              className="block mb-2 font-semibold"
+              style={{ color: 'var(--color-secondary)' }}
+            >
+              Kilometraje
+            </label>
+            <InputNumber
+              value={formData.kilometraje}
+              onValueChange={(e) =>
+                setFormData({ ...formData, kilometraje: e.value })
+              }
+              className="w-full"
+              min={0}
+              suffix=" km"
             />
           </div>
         </div>

@@ -466,7 +466,12 @@ function Usuarios() {
                 setFormData({ ...formData, telefono: e.target.value })
               }
               className="w-full"
+              placeholder="09XXXXXXXX"
+              maxLength={10}
             />
+            <small className="text-gray-500">
+              Formato ecuatoriano: 09 + 8 dígitos
+            </small>
           </div>
 
           <div className="col-span-1">

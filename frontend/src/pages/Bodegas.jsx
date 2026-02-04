@@ -492,9 +492,12 @@ function Bodegas() {
                 setFormData({ ...formData, codigoPostal: e.target.value })
               }
               className="w-full"
-              placeholder="5 dígitos"
-              maxLength={5}
+              placeholder="6 dígitos (Ej: 170507)"
+              maxLength={6}
             />
+            <small className="text-gray-500">
+              Los 2 primeros dígitos deben ser provincia válida (01-24)
+            </small>
           </div>
 
           <div className="col-span-1">

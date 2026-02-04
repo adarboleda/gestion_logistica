@@ -7,13 +7,17 @@ import Bodega from '../models/Bodega.js';
  */
 export const obtenerBodegas = async (req, res) => {
   try {
-    const { page = 1, limit = 10, activo, ciudad, search } = req.query;
+    const { page = 1, limit = 10, activo, estado, ciudad, search } = req.query;
 
     // Construir filtros
     const filtros = {};
 
-    if (activo !== undefined) {
-      filtros.activo = activo === 'true';
+    // Soportar ambos parámetros: 'activo' (legacy) y 'estado' (nuevo)
+    if (estado) {
+      filtros.estado = estado;
+    } else if (activo !== undefined) {
+      // Si se usa activo=true, filtrar por estado='activa'
+      filtros.estado = activo === 'true' ? 'activa' : 'inactiva';
     }
 
     if (ciudad) {
