@@ -94,12 +94,10 @@ const entregaSchema = new mongoose.Schema(
       type: String,
       enum: {
         values: [
-          'pendiente', // Ruta en_transito, esperando llegada
+          'pendiente', // Ruta completada, esperando que el conductor marque estado
+          'en_proceso', // El conductor está realizando la entrega
           'entregado', // Entrega completada exitosamente
-          'parcial', // Entrega parcial (no todos los productos)
-          'rechazado', // Cliente rechazó la entrega
-          'no_encontrado', // No se encontró al cliente
-          'reprogramado', // Se debe reprogramar
+          'retrasado', // Entrega retrasada
         ],
         message: '{VALUE} no es un estado válido',
       },
@@ -184,13 +182,7 @@ entregaSchema.virtual('progresoProductos').get(function () {
 
 // Virtual para verificar si está completada (cualquier estado final)
 entregaSchema.virtual('estaCompletada').get(function () {
-  return [
-    'entregado',
-    'parcial',
-    'rechazado',
-    'no_encontrado',
-    'reprogramado',
-  ].includes(this.estado);
+  return ['entregado', 'retrasado'].includes(this.estado);
 });
 
 /**
@@ -198,8 +190,8 @@ entregaSchema.virtual('estaCompletada').get(function () {
  * @param {Object} datos - Datos de la entrega {observaciones, firma, fotoEntrega, calificacion}
  */
 entregaSchema.methods.marcarEntregado = async function (datos = {}) {
-  if (this.estado !== 'pendiente') {
-    throw new Error('Solo se pueden marcar entregas pendientes');
+  if (!['pendiente', 'en_proceso'].includes(this.estado)) {
+    throw new Error('Solo se pueden marcar entregas pendientes o en proceso');
   }
 
   this.estado = 'entregado';
@@ -219,64 +211,37 @@ entregaSchema.methods.marcarEntregado = async function (datos = {}) {
 };
 
 /**
- * Marcar como entrega parcial
- * @param {Array} productosEntregados - Array con {productoId, cantidadEntregada, observacion}
+ * Marcar como en proceso
  * @param {Object} datos - Datos adicionales
  */
-entregaSchema.methods.marcarParcial = async function (
-  productosEntregados = [],
-  datos = {},
-) {
+entregaSchema.methods.marcarEnProceso = async function (datos = {}) {
   if (this.estado !== 'pendiente') {
-    throw new Error('Solo se pueden marcar entregas pendientes');
+    throw new Error(
+      'Solo se pueden marcar como en proceso entregas pendientes',
+    );
   }
 
-  this.estado = 'parcial';
-  this.fecha_entrega = new Date();
+  this.estado = 'en_proceso';
 
-  // Actualizar cantidades entregadas por producto
-  productosEntregados.forEach((pe) => {
-    const producto = this.productos.find(
-      (p) => p.producto.toString() === pe.productoId.toString(),
-    );
-    if (producto) {
-      producto.cantidadEntregada = pe.cantidadEntregada;
-      if (pe.observacion) producto.observacion = pe.observacion;
-    }
-  });
-
-  if (datos.firma) this.firma = datos.firma;
-  if (datos.fotoEntrega) this.fotoEntrega = datos.fotoEntrega;
   if (datos.observaciones) this.observaciones = datos.observaciones;
 
   return await this.save();
 };
 
 /**
- * Marcar como no entregado (rechazado, no encontrado, reprogramado)
- * @param {String} motivo - El motivo de no entrega
- * @param {String} nuevoEstado - El nuevo estado (rechazado, no_encontrado, reprogramado)
+ * Marcar como retrasado
+ * @param {String} motivo - El motivo del retraso
  * @param {Object} datos - Datos adicionales
  */
-entregaSchema.methods.marcarNoEntregado = async function (
-  motivo,
-  nuevoEstado = 'rechazado',
-  datos = {},
-) {
-  if (this.estado !== 'pendiente') {
-    throw new Error('Solo se pueden marcar entregas pendientes');
+entregaSchema.methods.marcarRetrasado = async function (motivo, datos = {}) {
+  if (!['pendiente', 'en_proceso'].includes(this.estado)) {
+    throw new Error('Solo se pueden marcar entregas pendientes o en proceso');
   }
 
-  const estadosValidos = ['rechazado', 'no_encontrado', 'reprogramado'];
-  if (!estadosValidos.includes(nuevoEstado)) {
-    throw new Error(`Estado no válido. Use: ${estadosValidos.join(', ')}`);
-  }
-
-  this.estado = nuevoEstado;
+  this.estado = 'retrasado';
   this.fecha_entrega = new Date();
   this.motivoNoEntrega = motivo;
 
-  if (datos.fotoEntrega) this.fotoEntrega = datos.fotoEntrega;
   if (datos.observaciones) this.observaciones = datos.observaciones;
 
   return await this.save();

@@ -337,8 +337,14 @@ export const cambiarEstadoRuta = async (req, res) => {
       ruta.fecha_inicio_real = new Date();
       // Actualizar vehículo a en_ruta
       await Vehiculo.findByIdAndUpdate(ruta.vehiculo, { estado: 'en_ruta' });
+    }
 
-      // Crear entrega automáticamente cuando la ruta inicia (en_transito)
+    if (estado === 'completada') {
+      ruta.fecha_fin_real = new Date();
+      // Liberar vehículo
+      await Vehiculo.findByIdAndUpdate(ruta.vehiculo, { estado: 'disponible' });
+
+      // Crear entrega automáticamente cuando la ruta se completa
       // La entrega queda en estado 'pendiente' hasta que el conductor la marque
       await ruta.populate('conductor vehiculo lista_productos.producto');
 
@@ -371,12 +377,6 @@ export const cambiarEstadoRuta = async (req, res) => {
         // Agregar la entrega creada a la respuesta
         ruta._doc.entregaCreada = entrega._id;
       }
-    }
-
-    if (estado === 'completada') {
-      ruta.fecha_fin_real = new Date();
-      // Liberar vehículo
-      await Vehiculo.findByIdAndUpdate(ruta.vehiculo, { estado: 'disponible' });
     }
 
     if (estado === 'cancelada') {
@@ -445,40 +445,11 @@ export const iniciarRuta = async (req, res) => {
 
     await ruta.populate('vehiculo conductor lista_productos.producto');
 
-    // Crear entrega automáticamente cuando la ruta inicia
-    let entregaCreada = null;
-    const entregaExistente = await Entrega.findOne({ ruta: ruta._id });
-    if (!entregaExistente) {
-      entregaCreada = await Entrega.create({
-        ruta: ruta._id,
-        conductor: ruta.conductor._id,
-        vehiculo: ruta.vehiculo._id,
-        cliente: {
-          nombre: ruta.destino.nombre,
-          direccion: ruta.destino.direccion,
-          telefono: ruta.destino.contacto?.telefono,
-          email: ruta.destino.contacto?.email,
-        },
-        origen: {
-          nombre: ruta.origen.nombre,
-          direccion: ruta.origen.direccion,
-        },
-        productos: ruta.lista_productos.map((p) => ({
-          producto: p.producto._id,
-          cantidadProgramada: p.cantidad,
-          cantidadEntregada: 0,
-        })),
-        fecha_programada: ruta.fecha_programada,
-        estado: 'pendiente',
-      });
-    }
-
     res.status(200).json({
       success: true,
       message: 'Ruta iniciada exitosamente',
       data: {
         ruta,
-        entregaCreada: entregaCreada?._id || entregaExistente?._id,
       },
     });
   } catch (error) {

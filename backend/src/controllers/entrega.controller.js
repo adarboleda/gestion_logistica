@@ -6,18 +6,16 @@ import Vehiculo from '../models/Vehiculo.js';
 /**
  * CONTROLADOR DE ENTREGAS - SIMPLIFICADO
  *
- * Las entregas se crean automáticamente cuando una Ruta cambia a estado 'en_transito'.
- * El conductor usa este módulo solo para marcar el estado final de la entrega.
+ * Las entregas se crean automáticamente cuando una Ruta cambia a estado 'completada'.
+ * El conductor usa este módulo para marcar el estado final de la entrega.
  *
  * IMPORTANTE: El tracking GPS está en el módulo de Rutas, no aquí.
  *
  * Estados de entrega:
- * - pendiente: Ruta en tránsito, esperando llegada
+ * - pendiente: Ruta completada, esperando que el conductor marque estado
+ * - en_proceso: El conductor está realizando la entrega
  * - entregado: Entrega completada exitosamente
- * - parcial: Entrega parcial (no todos los productos)
- * - rechazado: Cliente rechazó la entrega
- * - no_encontrado: No se encontró al cliente
- * - reprogramado: Se debe reprogramar
+ * - retrasado: Entrega retrasada
  */
 
 /**
@@ -175,25 +173,17 @@ export const obtenerEntregas = async (req, res) => {
         ...filtro,
         estado: 'pendiente',
       }),
+      en_proceso: await Entrega.countDocuments({
+        ...filtro,
+        estado: 'en_proceso',
+      }),
       entregadas: await Entrega.countDocuments({
         ...filtro,
         estado: 'entregado',
       }),
-      parciales: await Entrega.countDocuments({
+      retrasadas: await Entrega.countDocuments({
         ...filtro,
-        estado: 'parcial',
-      }),
-      rechazadas: await Entrega.countDocuments({
-        ...filtro,
-        estado: 'rechazado',
-      }),
-      no_encontradas: await Entrega.countDocuments({
-        ...filtro,
-        estado: 'no_encontrado',
-      }),
-      reprogramadas: await Entrega.countDocuments({
-        ...filtro,
-        estado: 'reprogramado',
+        estado: 'retrasado',
       }),
     };
 
@@ -254,7 +244,7 @@ export const obtenerEntregaPorId = async (req, res) => {
 };
 
 /**
- * @desc    Marcar estado de entrega (conductor marca resultado final)
+ * @desc    Marcar estado de entrega (conductor marca resultado)
  * @route   PATCH /api/entregas/:id/estado
  * @access  Privado (Conductor)
  */
@@ -264,7 +254,6 @@ export const actualizarEstadoEntrega = async (req, res) => {
       estado,
       motivoNoEntrega,
       observaciones,
-      productosEntregados, // Para entregas parciales: [{productoId, cantidadEntregada, observacion}]
       firma,
       fotoEntrega,
       calificacion,
@@ -279,22 +268,23 @@ export const actualizarEstadoEntrega = async (req, res) => {
       });
     }
 
-    // Solo se pueden modificar entregas pendientes
-    if (entrega.estado !== 'pendiente') {
+    // Validar transiciones de estado permitidas
+    const transicionesPermitidas = {
+      pendiente: ['en_proceso', 'entregado', 'retrasado'],
+      en_proceso: ['entregado', 'retrasado'],
+      entregado: [],
+      retrasado: [],
+    };
+
+    if (!transicionesPermitidas[entrega.estado]?.includes(estado)) {
       return res.status(400).json({
         success: false,
-        message: 'Solo se pueden modificar entregas pendientes',
+        message: `No se puede cambiar de ${entrega.estado} a ${estado}`,
       });
     }
 
     // Validar estado
-    const estadosValidos = [
-      'entregado',
-      'parcial',
-      'rechazado',
-      'no_encontrado',
-      'reprogramado',
-    ];
+    const estadosValidos = ['en_proceso', 'entregado', 'retrasado'];
     if (!estadosValidos.includes(estado)) {
       return res.status(400).json({
         success: false,
@@ -303,7 +293,10 @@ export const actualizarEstadoEntrega = async (req, res) => {
     }
 
     entrega.estado = estado;
-    entrega.fecha_entrega = new Date();
+
+    if (estado === 'entregado' || estado === 'retrasado') {
+      entrega.fecha_entrega = new Date();
+    }
 
     if (observaciones) entrega.observaciones = observaciones;
     if (firma) entrega.firma = firma;
@@ -316,21 +309,8 @@ export const actualizarEstadoEntrega = async (req, res) => {
       entrega.productos.forEach((p) => {
         p.cantidadEntregada = p.cantidadProgramada;
       });
-    } else if (estado === 'parcial') {
-      // Actualizar cantidades entregadas por producto
-      if (productosEntregados && Array.isArray(productosEntregados)) {
-        productosEntregados.forEach((pe) => {
-          const producto = entrega.productos.find(
-            (p) => p.producto.toString() === pe.productoId.toString(),
-          );
-          if (producto) {
-            producto.cantidadEntregada = pe.cantidadEntregada;
-            if (pe.observacion) producto.observacion = pe.observacion;
-          }
-        });
-      }
-    } else {
-      // Estados: rechazado, no_encontrado, reprogramado
+    } else if (estado === 'retrasado') {
+      // Guardar motivo del retraso
       if (motivoNoEntrega) entrega.motivoNoEntrega = motivoNoEntrega;
     }
 
@@ -402,18 +382,13 @@ export const obtenerHistorialEntregas = async (req, res) => {
     const estadisticas = {
       total: entregas.length,
       pendientes: entregas.filter((e) => e.estado === 'pendiente').length,
+      en_proceso: entregas.filter((e) => e.estado === 'en_proceso').length,
       entregadas: entregas.filter((e) => e.estado === 'entregado').length,
-      parciales: entregas.filter((e) => e.estado === 'parcial').length,
-      rechazadas: entregas.filter((e) => e.estado === 'rechazado').length,
-      no_encontradas: entregas.filter((e) => e.estado === 'no_encontrado')
-        .length,
-      reprogramadas: entregas.filter((e) => e.estado === 'reprogramado').length,
+      retrasadas: entregas.filter((e) => e.estado === 'retrasado').length,
       tasaExito:
         entregas.length > 0
           ? Math.round(
-              (entregas.filter((e) =>
-                ['entregado', 'parcial'].includes(e.estado),
-              ).length /
+              (entregas.filter((e) => e.estado === 'entregado').length /
                 entregas.length) *
                 100,
             )

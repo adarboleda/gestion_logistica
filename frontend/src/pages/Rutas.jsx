@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
@@ -14,34 +14,27 @@ import { Toast } from 'primereact/toast';
 import { ConfirmDialog, confirmDialog } from 'primereact/confirmdialog';
 import { Toolbar } from 'primereact/toolbar';
 import { Tag } from 'primereact/tag';
-import { useRef } from 'react';
-import { productoService, usuarioService } from '../services';
+import { productoService } from '../services';
 import api from '../services/api';
 
 function Rutas() {
   const toast = useRef(null);
 
-  // Estados del formulario
+  // Estados del formulario principal
   const [showDialog, setShowDialog] = useState(false);
+  const [showProductosDialog, setShowProductosDialog] = useState(false);
   const [loading, setLoading] = useState(false);
   const [productos, setProductos] = useState([]);
   const [vehiculos, setVehiculos] = useState([]);
-  const [conductores, setConductores] = useState([]);
+  const [bodegas, setBodegas] = useState([]);
   const [productosSeleccionados, setProductosSeleccionados] = useState([]);
 
   // Datos del formulario
   const [formData, setFormData] = useState({
-    origen: {
-      nombre: '',
-      direccion: '',
-      latitud: '',
-      longitud: '',
-    },
+    bodegaOrigen: null,
     destino: {
       nombre: '',
       direccion: '',
-      latitud: '',
-      longitud: '',
       contacto: {
         nombre: '',
         telefono: '',
@@ -50,11 +43,17 @@ function Rutas() {
     },
     fecha_programada: null,
     vehiculo: null,
-    conductor: null,
     observaciones: '',
-    distancia_estimada: 0,
-    tiempo_estimado: 0,
+    prioridad: 'media',
   });
+
+  // Opciones de prioridad
+  const prioridadOptions = [
+    { label: 'Baja', value: 'baja' },
+    { label: 'Media', value: 'media' },
+    { label: 'Alta', value: 'alta' },
+    { label: 'Urgente', value: 'urgente' },
+  ];
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -73,17 +72,20 @@ function Rutas() {
         setProductos(respProductos.data.productos);
       }
 
-      // Cargar conductores
-      const respConductores =
-        await usuarioService.obtenerConductoresDisponibles();
-      if (respConductores.success) {
-        setConductores(respConductores.data.conductores);
+      // Cargar bodegas
+      const respBodegas = await api.get('/bodegas?estado=activa&limit=100');
+      if (respBodegas.data.success) {
+        setBodegas(respBodegas.data.data.bodegas);
       }
 
-      // Cargar vehículos (simulado - ajustar cuando tengas el endpoint)
+      // Cargar vehículos disponibles (que tengan conductor asignado)
       const respVehiculos = await api.get('/vehiculos?estado=disponible');
       if (respVehiculos.data.success) {
-        setVehiculos(respVehiculos.data.data.vehiculos);
+        // Solo mostrar vehículos que tengan conductor asignado
+        const vehiculosConConductor = respVehiculos.data.data.vehiculos.filter(
+          (v) => v.conductor_asignado,
+        );
+        setVehiculos(vehiculosConConductor);
       }
     } catch (error) {
       console.error('Error cargando datos:', error);
@@ -105,17 +107,10 @@ function Rutas() {
 
   const resetFormulario = () => {
     setFormData({
-      origen: {
-        nombre: '',
-        direccion: '',
-        latitud: '',
-        longitud: '',
-      },
+      bodegaOrigen: null,
       destino: {
         nombre: '',
         direccion: '',
-        latitud: '',
-        longitud: '',
         contacto: {
           nombre: '',
           telefono: '',
@@ -124,21 +119,23 @@ function Rutas() {
       },
       fecha_programada: null,
       vehiculo: null,
-      conductor: null,
       observaciones: '',
-      distancia_estimada: 0,
-      tiempo_estimado: 0,
+      prioridad: 'media',
     });
     setProductosSeleccionados([]);
   };
 
+  const abrirDialogoProductos = () => {
+    setShowProductosDialog(true);
+  };
+
   const handleSubmit = async () => {
     // Validaciones
-    if (!formData.origen.nombre || !formData.origen.direccion) {
+    if (!formData.bodegaOrigen) {
       toast.current?.show({
         severity: 'warn',
         summary: 'Validación',
-        detail: 'Complete los datos del origen',
+        detail: 'Seleccione una bodega de origen',
         life: 3000,
       });
       return;
@@ -159,16 +156,6 @@ function Rutas() {
         severity: 'warn',
         summary: 'Validación',
         detail: 'Seleccione un vehículo',
-        life: 3000,
-      });
-      return;
-    }
-
-    if (!formData.conductor) {
-      toast.current?.show({
-        severity: 'warn',
-        summary: 'Validación',
-        detail: 'Seleccione un conductor',
         life: 3000,
       });
       return;
@@ -202,22 +189,28 @@ function Rutas() {
       accept: async () => {
         setLoading(true);
         try {
+          // Construir dirección completa de la bodega
+          const bodega = formData.bodegaOrigen;
+          const direccionBodega = bodega.direccion
+            ? `${bodega.direccion.calle}, ${bodega.direccion.ciudad}, ${bodega.direccion.estado}`
+            : '';
+
           // Preparar datos para enviar
           const rutaData = {
             origen: {
-              nombre: formData.origen.nombre,
-              direccion: formData.origen.direccion,
+              nombre: bodega.nombre,
+              direccion: direccionBodega,
               coordenadas: {
-                latitud: parseFloat(formData.origen.latitud) || 0,
-                longitud: parseFloat(formData.origen.longitud) || 0,
+                latitud: 0,
+                longitud: 0,
               },
             },
             destino: {
               nombre: formData.destino.nombre,
               direccion: formData.destino.direccion,
               coordenadas: {
-                latitud: parseFloat(formData.destino.latitud) || 0,
-                longitud: parseFloat(formData.destino.longitud) || 0,
+                latitud: 0,
+                longitud: 0,
               },
               contacto: {
                 nombre: formData.destino.contacto.nombre,
@@ -227,14 +220,13 @@ function Rutas() {
             },
             fecha_programada: formData.fecha_programada,
             vehiculo: formData.vehiculo._id,
-            conductor: formData.conductor._id,
+            conductor: formData.vehiculo.conductor_asignado._id,
             lista_productos: productosSeleccionados.map((p) => ({
               producto: p._id,
               cantidad: p.cantidadRuta || 1,
             })),
             observaciones: formData.observaciones,
-            distancia_km: formData.distancia_estimada,
-            tiempo_estimado_horas: formData.tiempo_estimado,
+            prioridad: formData.prioridad,
           };
 
           const response = await api.post('/rutas', rutaData);
@@ -248,7 +240,7 @@ function Rutas() {
             });
             setShowDialog(false);
             resetFormulario();
-            // Aquí podrías recargar la lista de rutas
+            cargarRutas();
           }
         } catch (error) {
           console.error('Error creando ruta:', error);
@@ -358,7 +350,7 @@ function Rutas() {
 
   const fechaTemplate = (rowData) => {
     if (!rowData.fecha_programada) return 'N/A';
-    return new Date(rowData.fecha_programada).toLocaleString('es-CO', {
+    return new Date(rowData.fecha_programada).toLocaleString('es-EC', {
       dateStyle: 'short',
       timeStyle: 'short',
     });
@@ -371,6 +363,20 @@ function Rutas() {
   const vehiculoRutaTemplate = (rowData) => {
     if (!rowData.vehiculo) return 'N/A';
     return `${rowData.vehiculo.placa} - ${rowData.vehiculo.marca}`;
+  };
+
+  const prioridadTemplate = (rowData) => {
+    const prioridades = {
+      baja: { label: 'Baja', severity: 'secondary' },
+      media: { label: 'Media', severity: 'info' },
+      alta: { label: 'Alta', severity: 'warning' },
+      urgente: { label: 'Urgente', severity: 'danger' },
+    };
+    const prioridad = prioridades[rowData.prioridad] || {
+      label: rowData.prioridad || 'Media',
+      severity: 'info',
+    };
+    return <Tag value={prioridad.label} severity={prioridad.severity} />;
   };
 
   const accionesRutaTemplate = (rowData) => {
@@ -445,7 +451,7 @@ function Rutas() {
   const completarRutaHandler = async (ruta) => {
     confirmDialog({
       message:
-        '¿Está seguro de completar esta ruta? Se creará automáticamente un registro de entrega.',
+        '¿Está seguro de completar esta ruta? Se creará automáticamente un registro de entrega pendiente para que el conductor marque su estado.',
       header: 'Confirmar',
       icon: 'pi pi-check-circle',
       accept: async () => {
@@ -457,8 +463,9 @@ function Rutas() {
             toast.current?.show({
               severity: 'success',
               summary: 'Éxito',
-              detail: 'Ruta completada y entrega registrada correctamente',
-              life: 3000,
+              detail:
+                'Ruta completada. La entrega está pendiente de confirmar en el módulo de Entregas.',
+              life: 4000,
             });
             cargarRutas();
           }
@@ -566,13 +573,11 @@ function Rutas() {
       life: 3000,
     });
 
-    // Hacer una actualización inmediata
     simularTracking();
 
-    // Iniciar intervalo para actualizaciones periódicas
     const intervalo = setInterval(() => {
       simularTracking();
-    }, 5000); // Cada 5 segundos
+    }, 5000);
 
     setIntervaloTracking(intervalo);
   };
@@ -591,7 +596,6 @@ function Rutas() {
     });
   };
 
-  // Limpiar intervalo al cerrar el diálogo
   const cerrarDialogoTracking = () => {
     detenerSimulacionTracking();
     setShowTrackingDialog(false);
@@ -603,7 +607,7 @@ function Rutas() {
       <ConfirmDialog />
 
       <Card
-        title="Gestión de Rutas y Entregas"
+        title="Gestión de Rutas"
         className="shadow-lg mb-4"
         style={{ backgroundColor: 'var(--color-surface)' }}
       >
@@ -645,7 +649,7 @@ function Rutas() {
             field="numeroRuta"
             header="# Ruta"
             sortable
-            style={{ minWidth: '120px' }}
+            style={{ minWidth: '100px' }}
           />
           <Column
             field="origen.nombre"
@@ -660,36 +664,42 @@ function Rutas() {
             style={{ minWidth: '150px' }}
           />
           <Column
-            header="Fecha Programada"
+            header="Fecha"
             body={fechaTemplate}
             sortable
-            style={{ minWidth: '160px' }}
+            style={{ minWidth: '140px' }}
           />
           <Column
             header="Conductor"
             body={conductorRutaTemplate}
-            style={{ minWidth: '150px' }}
+            style={{ minWidth: '130px' }}
           />
           <Column
             header="Vehículo"
             body={vehiculoRutaTemplate}
-            style={{ minWidth: '150px' }}
+            style={{ minWidth: '130px' }}
+          />
+          <Column
+            header="Prioridad"
+            body={prioridadTemplate}
+            sortable
+            style={{ minWidth: '100px' }}
           />
           <Column
             header="Estado"
             body={estadoRutaTemplate}
             sortable
-            style={{ minWidth: '120px' }}
+            style={{ minWidth: '110px' }}
           />
           <Column
             header="Acciones"
             body={accionesRutaTemplate}
-            style={{ minWidth: '180px' }}
+            style={{ minWidth: '150px' }}
           />
         </DataTable>
       </Card>
 
-      {/* Dialog de Tracking Mejorado */}
+      {/* Dialog de Tracking */}
       <Dialog
         header={`Tracking - Ruta ${rutaSeleccionada?.numeroRuta || ''}`}
         visible={showTrackingDialog}
@@ -699,7 +709,6 @@ function Rutas() {
       >
         {rutaSeleccionada && (
           <div className="space-y-4">
-            {/* Información de la ruta */}
             <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <div>
                 <p className="text-sm text-gray-500">Origen</p>
@@ -727,7 +736,6 @@ function Rutas() {
               </div>
             </div>
 
-            {/* Botones de simulación - Solo para rutas en tránsito */}
             {rutaSeleccionada.estado === 'en_transito' && (
               <div className="flex gap-2 justify-center">
                 {!simulandoTracking ? (
@@ -746,7 +754,7 @@ function Rutas() {
                   />
                 )}
                 <Button
-                  label="Actualizar Manualmente"
+                  label="Actualizar"
                   icon="pi pi-refresh"
                   outlined
                   onClick={simularTracking}
@@ -759,12 +767,11 @@ function Rutas() {
               <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <i className="pi pi-spin pi-spinner mr-2 text-blue-500"></i>
                 <span className="text-blue-700">
-                  Simulando movimiento del vehículo cada 5 segundos...
+                  Simulando movimiento cada 5 segundos...
                 </span>
               </div>
             )}
 
-            {/* Lista de puntos de tracking */}
             <div className="border rounded-lg max-h-80 overflow-y-auto">
               <div className="p-3 bg-gray-100 border-b font-semibold sticky top-0">
                 📍 Historial de Ubicaciones ({trackingData.length} puntos)
@@ -815,11 +822,6 @@ function Rutas() {
                   <p className="text-gray-500">
                     No hay datos de tracking disponibles
                   </p>
-                  {rutaSeleccionada.estado === 'en_transito' && (
-                    <p className="text-sm text-gray-400 mt-2">
-                      Inicie la simulación para generar puntos de tracking
-                    </p>
-                  )}
                 </div>
               )}
             </div>
@@ -827,163 +829,111 @@ function Rutas() {
         )}
       </Dialog>
 
-      {/* Dialog para crear ruta */}
+      {/* Dialog para crear ruta - Rediseñado */}
       <Dialog
         header="Crear Nueva Ruta"
         visible={showDialog}
-        style={{ width: '90vw', maxWidth: '1200px' }}
+        style={{ width: '800px', maxWidth: '95vw' }}
         onHide={() => setShowDialog(false)}
-        maximizable
         modal
       >
-        <div className="grid">
-          {/* Columna Izquierda - Información General */}
-          <div className="col-12 lg:col-6">
-            <Card
-              title="Información de Origen"
-              className="mb-3"
-              style={{
-                backgroundColor: 'var(--color-accent)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div className="flex flex-column gap-3">
-                <div className="flex flex-column gap-2">
+        <div className="grid gap-4">
+          {/* Sección Origen */}
+          <Card
+            title={
+              <span>
+                <i className="pi pi-warehouse mr-2"></i>Origen
+              </span>
+            }
+            className="shadow-sm"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            <div className="flex flex-column gap-2">
+              <label
+                className="font-semibold"
+                style={{ color: 'var(--color-secondary)' }}
+              >
+                Bodega de Origen *
+              </label>
+              <Dropdown
+                value={formData.bodegaOrigen}
+                options={bodegas}
+                onChange={(e) =>
+                  setFormData({ ...formData, bodegaOrigen: e.value })
+                }
+                optionLabel="nombre"
+                placeholder="Seleccione la bodega de origen"
+                filter
+                showClear
+                emptyMessage="No hay bodegas disponibles"
+                className="w-full"
+                itemTemplate={(option) => (
+                  <div className="flex align-items-center gap-2">
+                    <i className="pi pi-building"></i>
+                    <div>
+                      <div className="font-semibold">{option.nombre}</div>
+                      <div className="text-sm text-500">
+                        {option.direccion?.ciudad}, {option.direccion?.estado}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              />
+              {formData.bodegaOrigen && (
+                <div className="text-sm text-500 mt-1">
+                  <i className="pi pi-map-marker mr-1"></i>
+                  {formData.bodegaOrigen.direccion?.calle},{' '}
+                  {formData.bodegaOrigen.direccion?.ciudad}
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Sección Destino */}
+          <Card
+            title={
+              <span>
+                <i className="pi pi-map mr-2"></i>Destino
+              </span>
+            }
+            className="shadow-sm"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            <div className="flex flex-column gap-3">
+              <div className="grid">
+                <div className="col-12 md:col-6">
                   <label
-                    htmlFor="origen-nombre"
-                    className="font-semibold"
+                    className="font-semibold block mb-2"
                     style={{ color: 'var(--color-secondary)' }}
                   >
-                    Nombre del Lugar
+                    Nombre del Destino *
                   </label>
                   <InputText
-                    id="origen-nombre"
-                    value={formData.origen.nombre}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        origen: { ...formData.origen, nombre: e.target.value },
-                      })
-                    }
-                    placeholder="Ej: Bodega Central"
-                  />
-                </div>
-
-                <div className="flex flex-column gap-2">
-                  <label
-                    htmlFor="origen-direccion"
-                    className="font-semibold"
-                    style={{ color: 'var(--color-secondary)' }}
-                  >
-                    Dirección
-                  </label>
-                  <InputTextarea
-                    id="origen-direccion"
-                    value={formData.origen.direccion}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        origen: {
-                          ...formData.origen,
-                          direccion: e.target.value,
-                        },
-                      })
-                    }
-                    rows={2}
-                    placeholder="Dirección completa del origen"
-                  />
-                </div>
-
-                <div className="grid">
-                  <div className="col-6">
-                    <label
-                      className="font-semibold"
-                      style={{ color: 'var(--color-secondary)' }}
-                    >
-                      Latitud
-                    </label>
-                    <InputText
-                      value={formData.origen.latitud}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          origen: {
-                            ...formData.origen,
-                            latitud: e.target.value,
-                          },
-                        })
-                      }
-                      placeholder="0.000000"
-                    />
-                  </div>
-                  <div className="col-6">
-                    <label
-                      className="font-semibold"
-                      style={{ color: 'var(--color-secondary)' }}
-                    >
-                      Longitud
-                    </label>
-                    <InputText
-                      value={formData.origen.longitud}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          origen: {
-                            ...formData.origen,
-                            longitud: e.target.value,
-                          },
-                        })
-                      }
-                      placeholder="0.000000"
-                    />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            <Card
-              title="Información de Destino"
-              className="mb-3"
-              style={{
-                backgroundColor: 'var(--color-accent)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div className="flex flex-column gap-3">
-                <div className="flex flex-column gap-2">
-                  <label
-                    htmlFor="destino-nombre"
-                    className="font-semibold"
-                    style={{ color: 'var(--color-secondary)' }}
-                  >
-                    Nombre del Lugar
-                  </label>
-                  <InputText
-                    id="destino-nombre"
                     value={formData.destino.nombre}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
-                        destino: {
-                          ...formData.destino,
-                          nombre: e.target.value,
-                        },
+                        destino: { ...formData.destino, nombre: e.target.value },
                       })
                     }
-                    placeholder="Ej: Cliente ABC"
+                    placeholder="Ej: Cliente ABC, Sucursal Norte"
+                    className="w-full"
                   />
                 </div>
-
-                <div className="flex flex-column gap-2">
+                <div className="col-12 md:col-6">
                   <label
-                    htmlFor="destino-direccion"
-                    className="font-semibold"
+                    className="font-semibold block mb-2"
                     style={{ color: 'var(--color-secondary)' }}
                   >
-                    Dirección
+                    Dirección *
                   </label>
-                  <InputTextarea
-                    id="destino-direccion"
+                  <InputText
                     value={formData.destino.direccion}
                     onChange={(e) =>
                       setFormData({
@@ -994,383 +944,288 @@ function Rutas() {
                         },
                       })
                     }
-                    rows={2}
                     placeholder="Dirección completa del destino"
+                    className="w-full"
                   />
                 </div>
+              </div>
 
+              <div className="border-t pt-3">
+                <label
+                  className="font-semibold block mb-2"
+                  style={{ color: 'var(--color-secondary)' }}
+                >
+                  <i className="pi pi-user mr-1"></i>
+                  Contacto en Destino (Opcional)
+                </label>
                 <div className="grid">
-                  <div className="col-6">
-                    <label
-                      className="font-semibold"
-                      style={{ color: 'var(--color-secondary)' }}
-                    >
-                      Latitud
-                    </label>
+                  <div className="col-12 md:col-4">
                     <InputText
-                      value={formData.destino.latitud}
+                      value={formData.destino.contacto.nombre}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           destino: {
                             ...formData.destino,
-                            latitud: e.target.value,
+                            contacto: {
+                              ...formData.destino.contacto,
+                              nombre: e.target.value,
+                            },
                           },
                         })
                       }
-                      placeholder="0.000000"
+                      placeholder="Nombre del contacto"
+                      className="w-full"
                     />
                   </div>
-                  <div className="col-6">
-                    <label
-                      className="font-semibold"
-                      style={{ color: 'var(--color-secondary)' }}
-                    >
-                      Longitud
-                    </label>
+                  <div className="col-12 md:col-4">
                     <InputText
-                      value={formData.destino.longitud}
+                      value={formData.destino.contacto.telefono}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           destino: {
                             ...formData.destino,
-                            longitud: e.target.value,
+                            contacto: {
+                              ...formData.destino.contacto,
+                              telefono: e.target.value,
+                            },
                           },
                         })
                       }
-                      placeholder="0.000000"
+                      placeholder="Teléfono"
+                      className="w-full"
                     />
                   </div>
-                </div>
-
-                <div className="flex flex-column gap-2">
-                  <label
-                    className="font-semibold"
-                    style={{ color: 'var(--color-secondary)' }}
-                  >
-                    Contacto en Destino (Opcional)
-                  </label>
-                  <InputText
-                    value={formData.destino.contacto.nombre}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        destino: {
-                          ...formData.destino,
-                          contacto: {
-                            ...formData.destino.contacto,
-                            nombre: e.target.value,
-                          },
-                        },
-                      })
-                    }
-                    placeholder="Nombre del contacto"
-                    className="mb-2"
-                  />
-                  <InputText
-                    value={formData.destino.contacto.telefono}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        destino: {
-                          ...formData.destino,
-                          contacto: {
-                            ...formData.destino.contacto,
-                            telefono: e.target.value,
-                          },
-                        },
-                      })
-                    }
-                    placeholder="Teléfono"
-                    className="mb-2"
-                  />
-                  <InputText
-                    value={formData.destino.contacto.email}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        destino: {
-                          ...formData.destino,
-                          contacto: {
-                            ...formData.destino.contacto,
-                            email: e.target.value,
-                          },
-                        },
-                      })
-                    }
-                    placeholder="Email"
-                  />
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* Columna Derecha - Asignación y Productos */}
-          <div className="col-12 lg:col-6">
-            <Card
-              title="Asignación de Recursos"
-              className="mb-3"
-              style={{
-                backgroundColor: 'var(--color-accent)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <div className="flex flex-column gap-3">
-                <div className="flex flex-column gap-2">
-                  <label
-                    htmlFor="vehiculo"
-                    className="font-semibold"
-                    style={{ color: 'var(--color-secondary)' }}
-                  >
-                    <i className="pi pi-car mr-2"></i>
-                    Vehículo *
-                  </label>
-                  <Dropdown
-                    id="vehiculo"
-                    value={formData.vehiculo}
-                    options={vehiculos}
-                    onChange={(e) =>
-                      setFormData({ ...formData, vehiculo: e.value })
-                    }
-                    optionLabel="placa"
-                    placeholder="Seleccione un vehículo"
-                    filter
-                    showClear
-                    emptyMessage="No hay vehículos disponibles"
-                    itemTemplate={(option) => (
-                      <div className="flex align-items-center gap-2">
-                        <i className="pi pi-car"></i>
-                        <div>
-                          <div
-                            className="font-semibold"
-                            style={{ color: 'var(--color-secondary)' }}
-                          >
-                            {option.placa}
-                          </div>
-                          <div className="text-sm text-500">
-                            {option.marca} {option.modelo} - {option.tipo}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  />
-                </div>
-
-                <div className="flex flex-column gap-2">
-                  <label
-                    htmlFor="conductor"
-                    className="font-semibold"
-                    style={{ color: 'var(--color-secondary)' }}
-                  >
-                    <i className="pi pi-user mr-2"></i>
-                    Conductor *
-                  </label>
-                  <Dropdown
-                    id="conductor"
-                    value={formData.conductor}
-                    options={conductores}
-                    onChange={(e) =>
-                      setFormData({ ...formData, conductor: e.value })
-                    }
-                    optionLabel="nombre"
-                    placeholder="Seleccione un conductor"
-                    filter
-                    showClear
-                    emptyMessage="No hay conductores disponibles"
-                    itemTemplate={(option) => (
-                      <div className="flex align-items-center gap-2">
-                        <i className="pi pi-user"></i>
-                        <div>
-                          <div
-                            className="font-semibold"
-                            style={{ color: 'var(--color-secondary)' }}
-                          >
-                            {option.nombre}
-                          </div>
-                          <div className="text-sm text-500">{option.email}</div>
-                        </div>
-                      </div>
-                    )}
-                  />
-                </div>
-
-                <div className="flex flex-column gap-2">
-                  <label
-                    htmlFor="fecha"
-                    className="font-semibold"
-                    style={{ color: 'var(--color-secondary)' }}
-                  >
-                    <i className="pi pi-calendar mr-2"></i>
-                    Fecha Programada *
-                  </label>
-                  <Calendar
-                    id="fecha"
-                    value={formData.fecha_programada}
-                    onChange={(e) =>
-                      setFormData({ ...formData, fecha_programada: e.value })
-                    }
-                    showTime
-                    hourFormat="24"
-                    dateFormat="dd/mm/yy"
-                    placeholder="Seleccione fecha y hora"
-                    showIcon
-                    minDate={new Date()}
-                  />
-                </div>
-
-                <div className="grid">
-                  <div className="col-6">
-                    <label
-                      className="font-semibold"
-                      style={{ color: 'var(--color-secondary)' }}
-                    >
-                      Distancia (km)
-                    </label>
-                    <InputNumber
-                      value={formData.distancia_estimada}
-                      onValueChange={(e) =>
+                  <div className="col-12 md:col-4">
+                    <InputText
+                      value={formData.destino.contacto.email}
+                      onChange={(e) =>
                         setFormData({
                           ...formData,
-                          distancia_estimada: e.value,
+                          destino: {
+                            ...formData.destino,
+                            contacto: {
+                              ...formData.destino.contacto,
+                              email: e.target.value,
+                            },
+                          },
                         })
                       }
-                      min={0}
-                      suffix=" km"
+                      placeholder="Email"
+                      className="w-full"
                     />
                   </div>
-                  <div className="col-6">
-                    <label
-                      className="font-semibold"
-                      style={{ color: 'var(--color-secondary)' }}
-                    >
-                      Tiempo (min)
-                    </label>
-                    <InputNumber
-                      value={formData.tiempo_estimado}
-                      onValueChange={(e) =>
-                        setFormData({ ...formData, tiempo_estimado: e.value })
-                      }
-                      min={0}
-                      suffix=" min"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-column gap-2">
-                  <label
-                    htmlFor="observaciones"
-                    className="font-semibold"
-                    style={{ color: 'var(--color-secondary)' }}
-                  >
-                    Observaciones
-                  </label>
-                  <InputTextarea
-                    id="observaciones"
-                    value={formData.observaciones}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        observaciones: e.target.value,
-                      })
-                    }
-                    rows={3}
-                    placeholder="Observaciones adicionales..."
-                  />
                 </div>
               </div>
-            </Card>
-          </div>
+            </div>
+          </Card>
 
-          {/* Productos - Ancho Completo */}
-          <div className="col-12">
-            <Card
-              title="Productos a Transportar"
-              className="mb-3"
-              style={{
-                backgroundColor: 'var(--color-accent)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <Message
-                severity="info"
-                text="Seleccione los productos y defina las cantidades a transportar en esta ruta"
-                className="mb-3"
-              />
-
-              <DataTable
-                value={productos}
-                selection={productosSeleccionados}
-                onSelectionChange={(e) => setProductosSeleccionados(e.value)}
-                dataKey="_id"
-                paginator
-                rows={5}
-                rowsPerPageOptions={[5, 10, 25]}
-                emptyMessage="No hay productos disponibles"
-                loading={loading}
-                stripedRows
-                selectionMode="checkbox"
-              >
-                <Column
-                  selectionMode="multiple"
-                  headerStyle={{ width: '3rem' }}
+          {/* Sección Asignación */}
+          <Card
+            title={
+              <span>
+                <i className="pi pi-cog mr-2"></i>Asignación
+              </span>
+            }
+            className="shadow-sm"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            <div className="grid">
+              <div className="col-12 md:col-6">
+                <label
+                  className="font-semibold block mb-2"
+                  style={{ color: 'var(--color-secondary)' }}
+                >
+                  <i className="pi pi-car mr-1"></i>
+                  Vehículo *
+                </label>
+                <Dropdown
+                  value={formData.vehiculo}
+                  options={vehiculos}
+                  onChange={(e) =>
+                    setFormData({ ...formData, vehiculo: e.value })
+                  }
+                  optionLabel="placa"
+                  placeholder="Seleccione un vehículo"
+                  filter
+                  showClear
+                  emptyMessage="No hay vehículos disponibles con conductor"
+                  className="w-full"
+                  itemTemplate={(option) => (
+                    <div className="flex align-items-center gap-2">
+                      <i className="pi pi-car"></i>
+                      <div>
+                        <div className="font-semibold">
+                          {option.placa} - {option.marca} {option.modelo}
+                        </div>
+                        <div className="text-sm text-500">
+                          <i className="pi pi-user mr-1"></i>
+                          Conductor: {option.conductor_asignado?.nombre || 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 />
+                {formData.vehiculo && (
+                  <Message
+                    severity="info"
+                    className="mt-2 w-full"
+                    text={`Conductor asignado: ${formData.vehiculo.conductor_asignado?.nombre}`}
+                  />
+                )}
+              </div>
+              <div className="col-12 md:col-3">
+                <label
+                  className="font-semibold block mb-2"
+                  style={{ color: 'var(--color-secondary)' }}
+                >
+                  <i className="pi pi-calendar mr-1"></i>
+                  Fecha Programada *
+                </label>
+                <Calendar
+                  value={formData.fecha_programada}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fecha_programada: e.value })
+                  }
+                  showTime
+                  hourFormat="24"
+                  dateFormat="dd/mm/yy"
+                  placeholder="Fecha y hora"
+                  showIcon
+                  minDate={new Date()}
+                  className="w-full"
+                />
+              </div>
+              <div className="col-12 md:col-3">
+                <label
+                  className="font-semibold block mb-2"
+                  style={{ color: 'var(--color-secondary)' }}
+                >
+                  <i className="pi pi-flag mr-1"></i>
+                  Prioridad
+                </label>
+                <Dropdown
+                  value={formData.prioridad}
+                  options={prioridadOptions}
+                  onChange={(e) =>
+                    setFormData({ ...formData, prioridad: e.value })
+                  }
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <label
+                className="font-semibold block mb-2"
+                style={{ color: 'var(--color-secondary)' }}
+              >
+                Observaciones
+              </label>
+              <InputTextarea
+                value={formData.observaciones}
+                onChange={(e) =>
+                  setFormData({ ...formData, observaciones: e.target.value })
+                }
+                rows={2}
+                placeholder="Observaciones adicionales..."
+                className="w-full"
+              />
+            </div>
+          </Card>
+
+          {/* Sección Productos */}
+          <Card
+            title={
+              <span>
+                <i className="pi pi-box mr-2"></i>Productos a Transportar
+              </span>
+            }
+            className="shadow-sm"
+            style={{
+              backgroundColor: 'var(--color-accent)',
+              border: '1px solid var(--color-border)',
+            }}
+          >
+            <div className="flex align-items-center justify-content-between mb-3">
+              <div>
+                {productosSeleccionados.length > 0 ? (
+                  <div>
+                    <Tag
+                      value={`${productosSeleccionados.length} producto(s) seleccionado(s)`}
+                      severity="success"
+                      className="mr-2"
+                    />
+                    <span className="text-sm text-500">
+                      Total:{' '}
+                      {productosSeleccionados.reduce(
+                        (sum, p) => sum + (p.cantidadRuta || 1),
+                        0,
+                      )}{' '}
+                      unidades
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-500">
+                    No hay productos seleccionados
+                  </span>
+                )}
+              </div>
+              <Button
+                label="Seleccionar Productos"
+                icon="pi pi-plus"
+                onClick={abrirDialogoProductos}
+                outlined
+              />
+            </div>
+
+            {productosSeleccionados.length > 0 && (
+              <DataTable
+                value={productosSeleccionados}
+                size="small"
+                stripedRows
+              >
                 <Column
                   field="nombre"
                   header="Producto"
                   body={nombreProductoTemplate}
-                  sortable
                 />
-                <Column field="categoria" header="Categoría" sortable />
+                <Column field="categoria" header="Categoría" />
                 <Column
-                  field="stock_actual"
-                  header="Stock Disponible"
-                  body={stockTemplate}
-                  sortable
-                />
-                <Column
-                  field="bodega"
-                  header="Bodega"
-                  body={bodegaTemplate}
-                  sortable
-                />
-                <Column
-                  header="Cantidad a Transportar"
+                  header="Cantidad"
                   body={cantidadTemplate}
-                  style={{ width: '200px' }}
+                  style={{ width: '180px' }}
+                />
+                <Column
+                  body={(rowData) => (
+                    <Button
+                      icon="pi pi-trash"
+                      rounded
+                      outlined
+                      severity="danger"
+                      size="small"
+                      onClick={() =>
+                        setProductosSeleccionados(
+                          productosSeleccionados.filter(
+                            (p) => p._id !== rowData._id,
+                          ),
+                        )
+                      }
+                    />
+                  )}
+                  style={{ width: '60px' }}
                 />
               </DataTable>
-
-              {productosSeleccionados.length > 0 && (
-                <div
-                  className="mt-3 p-3 border-round"
-                  style={{
-                    backgroundColor: 'var(--color-accent)',
-                    border: '1px solid var(--color-border)',
-                  }}
-                >
-                  <strong style={{ color: 'var(--color-secondary)' }}>
-                    Resumen:
-                  </strong>{' '}
-                  {productosSeleccionados.length} producto(s) seleccionado(s)
-                  <div
-                    className="text-sm mt-1"
-                    style={{ color: 'var(--color-text-secondary)' }}
-                  >
-                    Total de unidades:{' '}
-                    {productosSeleccionados.reduce(
-                      (sum, p) => sum + (p.cantidadRuta || 1),
-                      0,
-                    )}
-                  </div>
-                </div>
-              )}
-            </Card>
-          </div>
+            )}
+          </Card>
         </div>
 
         {/* Botones del Dialog */}
-        <div className="flex justify-content-end gap-2 mt-3">
+        <div className="flex justify-content-end gap-2 mt-4">
           <Button
             label="Cancelar"
             icon="pi pi-times"
@@ -1385,6 +1240,79 @@ function Rutas() {
             loading={loading}
             disabled={loading}
           />
+        </div>
+      </Dialog>
+
+      {/* Dialog para seleccionar productos - Modal separado */}
+      <Dialog
+        header="Seleccionar Productos a Transportar"
+        visible={showProductosDialog}
+        style={{ width: '900px', maxWidth: '95vw' }}
+        onHide={() => setShowProductosDialog(false)}
+        modal
+      >
+        <Message
+          severity="info"
+          text="Seleccione los productos que desea incluir en la ruta"
+          className="mb-3 w-full"
+        />
+
+        <DataTable
+          value={productos}
+          selection={productosSeleccionados}
+          onSelectionChange={(e) => setProductosSeleccionados(e.value)}
+          dataKey="_id"
+          paginator
+          rows={10}
+          rowsPerPageOptions={[5, 10, 25]}
+          emptyMessage="No hay productos disponibles"
+          loading={loading}
+          stripedRows
+          selectionMode="checkbox"
+          filterDisplay="row"
+        >
+          <Column selectionMode="multiple" headerStyle={{ width: '3rem' }} />
+          <Column
+            field="nombre"
+            header="Producto"
+            body={nombreProductoTemplate}
+            sortable
+            filter
+            filterPlaceholder="Buscar..."
+          />
+          <Column field="categoria" header="Categoría" sortable filter />
+          <Column
+            field="stock_actual"
+            header="Stock"
+            body={stockTemplate}
+            sortable
+          />
+          <Column field="bodega" header="Bodega" body={bodegaTemplate} />
+        </DataTable>
+
+        <div className="flex justify-content-between mt-4">
+          <div>
+            {productosSeleccionados.length > 0 && (
+              <Tag
+                value={`${productosSeleccionados.length} producto(s) seleccionado(s)`}
+                severity="success"
+              />
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button
+              label="Cancelar"
+              icon="pi pi-times"
+              outlined
+              onClick={() => setShowProductosDialog(false)}
+            />
+            <Button
+              label="Confirmar Selección"
+              icon="pi pi-check"
+              onClick={() => setShowProductosDialog(false)}
+              disabled={productosSeleccionados.length === 0}
+            />
+          </div>
         </div>
       </Dialog>
     </div>

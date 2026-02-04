@@ -27,8 +27,8 @@ export const obtenerBodegas = async (req, res) => {
     if (search) {
       filtros.$or = [
         { nombre: { $regex: search, $options: 'i' } },
-        { codigo: { $regex: search, $options: 'i' } },
-        { direccion: { $regex: search, $options: 'i' } },
+        { 'direccion.calle': { $regex: search, $options: 'i' } },
+        { 'direccion.ciudad': { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -105,33 +105,24 @@ export const obtenerBodegaPorId = async (req, res) => {
  */
 export const crearBodega = async (req, res) => {
   try {
-    const {
-      codigo,
-      nombre,
-      direccion,
-      ciudad,
-      capacidad_m3,
-      telefono,
-      responsable,
-    } = req.body;
+    const { nombre, direccion, estado, capacidadMaxima, descripcion } =
+      req.body;
 
-    // Validar que no exista una bodega con el mismo código
-    const bodegaExistente = await Bodega.findOne({ codigo });
+    // Validar que no exista una bodega con el mismo nombre
+    const bodegaExistente = await Bodega.findOne({ nombre });
     if (bodegaExistente) {
       return res.status(400).json({
         success: false,
-        message: 'Ya existe una bodega con ese código',
+        message: 'Ya existe una bodega con ese nombre',
       });
     }
 
     const bodega = await Bodega.create({
-      codigo,
       nombre,
       direccion,
-      ciudad,
-      capacidad_m3,
-      telefono,
-      responsable,
+      estado,
+      capacidadMaxima,
+      descripcion,
     });
 
     res.status(201).json({

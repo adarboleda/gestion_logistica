@@ -18,16 +18,15 @@ import { entregaService } from '../services';
 /**
  * PÁGINA DE ENTREGAS - SIMPLIFICADA
  *
- * Este módulo es para que el conductor marque el estado final de la entrega.
+ * Este módulo es para que el conductor marque el estado de la entrega.
+ * Las entregas se crean automáticamente cuando una ruta pasa a estado "completada".
  * El tracking GPS está en el módulo de Rutas (cuando estado='en_transito').
  *
  * Estados de entrega:
- * - pendiente: Ruta en tránsito, esperando llegada
+ * - pendiente: Ruta completada, esperando que el conductor marque estado
+ * - en_proceso: El conductor está realizando la entrega
  * - entregado: Entrega completada exitosamente
- * - parcial: Entrega parcial (no todos los productos)
- * - rechazado: Cliente rechazó la entrega
- * - no_encontrado: No se encontró al cliente
- * - reprogramado: Se debe reprogramar
+ * - retrasado: Entrega retrasada
  */
 
 function Entregas() {
@@ -42,11 +41,9 @@ function Entregas() {
   const [estadisticas, setEstadisticas] = useState({
     total: 0,
     pendientes: 0,
+    en_proceso: 0,
     entregadas: 0,
-    parciales: 0,
-    rechazadas: 0,
-    no_encontradas: 0,
-    reprogramadas: 0,
+    retrasadas: 0,
   });
 
   // Estados para el diálogo de marcar entrega
@@ -119,15 +116,12 @@ function Entregas() {
   const marcarEstado = async () => {
     if (!entregaSeleccionada || !nuevoEstado) return;
 
-    // Validar motivo para estados que lo requieren
-    if (
-      ['rechazado', 'no_encontrado', 'reprogramado'].includes(nuevoEstado) &&
-      !motivoNoEntrega.trim()
-    ) {
+    // Validar motivo para estado retrasado
+    if (nuevoEstado === 'retrasado' && !motivoNoEntrega.trim()) {
       toast.current?.show({
         severity: 'warn',
         summary: 'Atención',
-        detail: 'Debe indicar el motivo de no entrega',
+        detail: 'Debe indicar el motivo del retraso',
         life: 3000,
       });
       return;
@@ -168,11 +162,9 @@ function Entregas() {
   const getEstadoLabel = (estado) => {
     const labels = {
       pendiente: 'Pendiente',
+      en_proceso: 'En Proceso',
       entregado: 'Entregado',
-      parcial: 'Parcial',
-      rechazado: 'Rechazado',
-      no_encontrado: 'No Encontrado',
-      reprogramado: 'Reprogramado',
+      retrasado: 'Retrasado',
     };
     return labels[estado] || estado;
   };
@@ -185,26 +177,20 @@ function Entregas() {
         severity: 'warning',
         icon: 'pi pi-clock',
       },
+      en_proceso: {
+        label: 'En Proceso',
+        severity: 'info',
+        icon: 'pi pi-spinner',
+      },
       entregado: {
         label: 'Entregado',
         severity: 'success',
         icon: 'pi pi-check',
       },
-      parcial: { label: 'Parcial', severity: 'info', icon: 'pi pi-minus' },
-      rechazado: {
-        label: 'Rechazado',
+      retrasado: {
+        label: 'Retrasado',
         severity: 'danger',
-        icon: 'pi pi-times',
-      },
-      no_encontrado: {
-        label: 'No Encontrado',
-        severity: 'secondary',
-        icon: 'pi pi-question',
-      },
-      reprogramado: {
-        label: 'Reprogramado',
-        severity: 'help',
-        icon: 'pi pi-calendar',
+        icon: 'pi pi-exclamation-triangle',
       },
     };
     const config = estados[rowData.estado] || {
@@ -247,13 +233,23 @@ function Entregas() {
   };
 
   const accionesTemplate = (rowData) => {
-    // Solo mostrar acciones si está pendiente
-    if (rowData.estado !== 'pendiente') {
+    // Solo mostrar acciones si está pendiente o en proceso
+    if (!['pendiente', 'en_proceso'].includes(rowData.estado)) {
       return <span className="text-gray-400 text-sm">Finalizada</span>;
     }
 
     return (
       <div className="flex gap-1 flex-wrap">
+        {rowData.estado === 'pendiente' && (
+          <Button
+            icon="pi pi-play"
+            size="small"
+            severity="info"
+            tooltip="En Proceso"
+            tooltipOptions={{ position: 'top' }}
+            onClick={() => abrirDialogoMarcar(rowData, 'en_proceso')}
+          />
+        )}
         <Button
           icon="pi pi-check"
           size="small"
@@ -263,36 +259,12 @@ function Entregas() {
           onClick={() => abrirDialogoMarcar(rowData, 'entregado')}
         />
         <Button
-          icon="pi pi-minus"
-          size="small"
-          severity="info"
-          tooltip="Parcial"
-          tooltipOptions={{ position: 'top' }}
-          onClick={() => abrirDialogoMarcar(rowData, 'parcial')}
-        />
-        <Button
-          icon="pi pi-times"
+          icon="pi pi-exclamation-triangle"
           size="small"
           severity="danger"
-          tooltip="Rechazado"
+          tooltip="Retrasado"
           tooltipOptions={{ position: 'top' }}
-          onClick={() => abrirDialogoMarcar(rowData, 'rechazado')}
-        />
-        <Button
-          icon="pi pi-question"
-          size="small"
-          severity="secondary"
-          tooltip="No Encontrado"
-          tooltipOptions={{ position: 'top' }}
-          onClick={() => abrirDialogoMarcar(rowData, 'no_encontrado')}
-        />
-        <Button
-          icon="pi pi-calendar"
-          size="small"
-          severity="help"
-          tooltip="Reprogramar"
-          tooltipOptions={{ position: 'top' }}
-          onClick={() => abrirDialogoMarcar(rowData, 'reprogramado')}
+          onClick={() => abrirDialogoMarcar(rowData, 'retrasado')}
         />
       </div>
     );
@@ -359,12 +331,20 @@ function Entregas() {
       </div>
 
       {/* Cards de estadísticas con nuevos estados */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
           <div className="text-center">
             <p className="text-sm font-medium text-gray-600">Pendientes</p>
             <p className="text-2xl font-bold text-yellow-600 mt-1">
               {loading ? '...' : estadisticas.pendientes || 0}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
+          <div className="text-center">
+            <p className="text-sm font-medium text-gray-600">En Proceso</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">
+              {loading ? '...' : estadisticas.en_proceso || 0}
             </p>
           </div>
         </div>
@@ -378,33 +358,9 @@ function Entregas() {
         </div>
         <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
           <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">Parciales</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">
-              {loading ? '...' : estadisticas.parciales || 0}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-          <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">Rechazadas</p>
+            <p className="text-sm font-medium text-gray-600">Retrasadas</p>
             <p className="text-2xl font-bold text-red-600 mt-1">
-              {loading ? '...' : estadisticas.rechazadas || 0}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-          <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">No Encontradas</p>
-            <p className="text-2xl font-bold text-gray-600 mt-1">
-              {loading ? '...' : estadisticas.no_encontradas || 0}
-            </p>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4 border border-gray-200">
-          <div className="text-center">
-            <p className="text-sm font-medium text-gray-600">Reprogramadas</p>
-            <p className="text-2xl font-bold text-purple-600 mt-1">
-              {loading ? '...' : estadisticas.reprogramadas || 0}
+              {loading ? '...' : estadisticas.retrasadas || 0}
             </p>
           </div>
         </div>
@@ -421,7 +377,9 @@ function Entregas() {
             <div className="mb-4">{rightToolbarTemplate()}</div>
 
             <DataTable
-              value={entregas.filter((e) => e.estado === 'pendiente')}
+              value={entregas.filter((e) =>
+                ['pendiente', 'en_proceso'].includes(e.estado),
+              )}
               loading={loading}
               paginator
               rows={10}
@@ -464,17 +422,23 @@ function Entregas() {
                 style={{ minWidth: '150px' }}
               />
               <Column
+                header="Estado"
+                body={estadoTemplate}
+                style={{ minWidth: '120px' }}
+              />
+              <Column
                 header="Marcar Estado"
                 body={accionesTemplate}
-                style={{ minWidth: '280px' }}
+                style={{ minWidth: '180px' }}
               />
             </DataTable>
 
             <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-blue-800 text-sm">
                 <i className="pi pi-info-circle mr-2"></i>
-                <strong>Nota:</strong> El tracking GPS está disponible en el
-                módulo de Rutas cuando la ruta está en tránsito.
+                <strong>Nota:</strong> Las entregas aparecen aquí cuando la ruta
+                se marca como completada. El conductor debe marcar el estado
+                final de cada entrega.
               </p>
             </div>
           </TabPanel>
@@ -497,7 +461,7 @@ function Entregas() {
 
             {historialData && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                   <div className="bg-green-50 rounded-lg p-4 border border-green-200 text-center">
                     <div className="text-3xl font-bold text-green-600">
                       {historialData.estadisticas?.tasaExito || 0}%
@@ -512,11 +476,17 @@ function Entregas() {
                     </div>
                     <div className="text-gray-600 text-sm mt-1">Entregadas</div>
                   </div>
-                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200 text-center">
-                    <div className="text-3xl font-bold text-purple-600">
-                      {historialData.estadisticas?.parciales || 0}
+                  <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200 text-center">
+                    <div className="text-3xl font-bold text-yellow-600">
+                      {historialData.estadisticas?.en_proceso || 0}
                     </div>
-                    <div className="text-gray-600 text-sm mt-1">Parciales</div>
+                    <div className="text-gray-600 text-sm mt-1">En Proceso</div>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-4 border border-red-200 text-center">
+                    <div className="text-3xl font-bold text-red-600">
+                      {historialData.estadisticas?.retrasadas || 0}
+                    </div>
+                    <div className="text-gray-600 text-sm mt-1">Retrasadas</div>
                   </div>
                 </div>
 
@@ -594,7 +564,7 @@ function Entregas() {
               <Column
                 header="Acciones"
                 body={accionesTemplate}
-                style={{ minWidth: '280px' }}
+                style={{ minWidth: '180px' }}
               />
             </DataTable>
           </TabPanel>
@@ -638,20 +608,18 @@ function Entregas() {
               </p>
             </div>
 
-            {/* Mostrar campo de motivo para estados que lo requieren */}
-            {['rechazado', 'no_encontrado', 'reprogramado'].includes(
-              nuevoEstado,
-            ) && (
+            {/* Mostrar campo de motivo solo para estado retrasado */}
+            {nuevoEstado === 'retrasado' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Motivo de No Entrega <span className="text-red-500">*</span>
+                  Motivo del Retraso <span className="text-red-500">*</span>
                 </label>
                 <InputTextarea
                   value={motivoNoEntrega}
                   onChange={(e) => setMotivoNoEntrega(e.target.value)}
                   rows={3}
                   className="w-full"
-                  placeholder="Indique el motivo..."
+                  placeholder="Indique el motivo del retraso..."
                 />
               </div>
             )}
