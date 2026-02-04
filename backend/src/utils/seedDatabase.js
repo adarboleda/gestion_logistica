@@ -480,89 +480,115 @@ const seedDatabase = async () => {
 
     // IMPORTANTE: Los movimientos se deben crear con create() porque tienen
     // middleware pre-save que actualiza automáticamente el stock de los productos
+    // Cada producto tiene su bodega asignada, usamos eso para las bodegas de origen/destino
     const movimientosData = [
       // Entradas (compras) - Incrementan el stock
+      // Productos[0] y [1] están en bodegas[0] (Quito)
+      // Productos[2] y [3] están en bodegas[1] (Guayaquil)
+      // Productos[4] está en bodegas[2] (Cuenca)
+      // Productos[5] está en bodegas[0] (Quito)
       {
         tipo: 'entrada',
-        producto: productos[0]._id, // Laptop Dell
+        producto: productos[0]._id, // Laptop Dell - Bodega Quito
         cantidad: 25,
-        usuario_responsable: usuarios[0]._id,
+        usuario_responsable: usuarios[0]._id, // Admin
+        bodegaDestino: bodegas[0]._id, // Bodega Central Quito
         motivoMovimiento: 'compra',
         observaciones: 'Compra inicial de laptops para stock',
         documentoReferencia: 'OC-2026-001',
       },
       {
         tipo: 'entrada',
-        producto: productos[1]._id, // Mouse Logitech
+        producto: productos[1]._id, // Mouse Logitech - Bodega Quito
         cantidad: 50,
-        usuario_responsable: usuarios[4]._id,
+        usuario_responsable: usuarios[4]._id, // Operador
+        bodegaDestino: bodegas[0]._id, // Bodega Central Quito
         motivoMovimiento: 'compra',
         observaciones: 'Reposición de accesorios',
         documentoReferencia: 'OC-2026-002',
       },
       {
         tipo: 'entrada',
-        producto: productos[2]._id, // Arroz Diana
+        producto: productos[2]._id, // Arroz Diana - Bodega Guayaquil
         cantidad: 100,
-        usuario_responsable: usuarios[1]._id,
+        usuario_responsable: usuarios[1]._id, // Coordinador
+        bodegaDestino: bodegas[1]._id, // Bodega Puerto Guayaquil
         motivoMovimiento: 'compra',
         observaciones: 'Compra mensual de alimentos',
         documentoReferencia: 'OC-2026-003',
       },
       {
         tipo: 'entrada',
-        producto: productos[5]._id, // Acetaminofén
+        producto: productos[5]._id, // Acetaminofén - Bodega Quito
         cantidad: 200,
-        usuario_responsable: usuarios[0]._id,
+        usuario_responsable: usuarios[0]._id, // Admin
+        bodegaDestino: bodegas[0]._id, // Bodega Central Quito
         motivoMovimiento: 'compra',
         observaciones: 'Stock de medicamentos para distribución',
         documentoReferencia: 'OC-2026-004',
+      },
+      {
+        tipo: 'entrada',
+        producto: productos[4]._id, // Camisetas Polo - Bodega Cuenca
+        cantidad: 150,
+        usuario_responsable: usuarios[1]._id, // Coordinador
+        bodegaDestino: bodegas[2]._id, // Bodega Sur Cuenca
+        motivoMovimiento: 'compra',
+        observaciones: 'Stock inicial de textiles',
+        documentoReferencia: 'OC-2026-005',
       },
 
       // Salidas (ventas) - Decrementan el stock
       {
         tipo: 'salida',
-        producto: productos[0]._id, // Laptop Dell
+        producto: productos[0]._id, // Laptop Dell - Bodega Quito
         cantidad: 15,
-        usuario_responsable: usuarios[4]._id,
+        usuario_responsable: usuarios[4]._id, // Operador
+        bodegaOrigen: bodegas[0]._id, // Bodega Central Quito
         motivoMovimiento: 'venta',
-        observaciones: 'Venta a empresa cliente',
+        observaciones: 'Venta a empresa TechCorp Ecuador',
         documentoReferencia: 'FAC-2026-001',
       },
       {
         tipo: 'salida',
-        producto: productos[1]._id, // Mouse Logitech
+        producto: productos[1]._id, // Mouse Logitech - Bodega Quito
         cantidad: 30,
-        usuario_responsable: usuarios[4]._id,
+        usuario_responsable: usuarios[4]._id, // Operador
+        bodegaOrigen: bodegas[0]._id, // Bodega Central Quito
         motivoMovimiento: 'venta',
         observaciones: 'Venta al por mayor',
         documentoReferencia: 'FAC-2026-002',
       },
       {
         tipo: 'salida',
-        producto: productos[2]._id, // Arroz Diana
+        producto: productos[2]._id, // Arroz Diana - Bodega Guayaquil
         cantidad: 50,
-        usuario_responsable: usuarios[1]._id,
+        usuario_responsable: usuarios[1]._id, // Coordinador
+        bodegaOrigen: bodegas[1]._id, // Bodega Puerto Guayaquil
         motivoMovimiento: 'venta',
-        observaciones: 'Despacho a supermercado',
+        observaciones: 'Despacho a Supermercado La Favorita',
         documentoReferencia: 'FAC-2026-003',
       },
 
-      // Ajustes de inventario
+      // Ajustes de inventario (daño)
       {
         tipo: 'salida',
-        producto: productos[3]._id, // Aceite de Cocina
+        producto: productos[3]._id, // Aceite de Cocina - Bodega Guayaquil
         cantidad: 5,
-        usuario_responsable: usuarios[4]._id,
+        usuario_responsable: usuarios[4]._id, // Operador
+        bodegaOrigen: bodegas[1]._id, // Bodega Puerto Guayaquil
         motivoMovimiento: 'daño',
         observaciones: 'Producto dañado durante almacenamiento',
         documentoReferencia: 'AJ-2026-001',
       },
+
+      // Devolución (entrada)
       {
         tipo: 'entrada',
-        producto: productos[4]._id, // Camisetas Polo
+        producto: productos[4]._id, // Camisetas Polo - Bodega Cuenca
         cantidad: 20,
-        usuario_responsable: usuarios[1]._id,
+        usuario_responsable: usuarios[1]._id, // Coordinador
+        bodegaDestino: bodegas[2]._id, // Bodega Sur Cuenca
         motivoMovimiento: 'devolucion',
         observaciones: 'Devolución de cliente por talla incorrecta',
         documentoReferencia: 'DEV-2026-001',
@@ -573,12 +599,23 @@ const seedDatabase = async () => {
         tipo: 'transferencia',
         producto: productos[5]._id, // Acetaminofén
         cantidad: 100,
-        usuario_responsable: usuarios[1]._id,
+        usuario_responsable: usuarios[1]._id, // Coordinador
         bodegaOrigen: bodegas[0]._id, // Quito
         bodegaDestino: bodegas[2]._id, // Cuenca
         motivoMovimiento: 'transferencia_bodegas',
         observaciones: 'Transferencia para suplir demanda en zona austral',
         documentoReferencia: 'TRANS-2026-001',
+      },
+      {
+        tipo: 'transferencia',
+        producto: productos[2]._id, // Arroz Diana
+        cantidad: 30,
+        usuario_responsable: usuarios[1]._id, // Coordinador
+        bodegaOrigen: bodegas[1]._id, // Guayaquil
+        bodegaDestino: bodegas[0]._id, // Quito
+        motivoMovimiento: 'transferencia_bodegas',
+        observaciones: 'Reposición de stock en bodega central',
+        documentoReferencia: 'TRANS-2026-002',
       },
     ];
 
@@ -602,111 +639,11 @@ const seedDatabase = async () => {
     // ========== CREAR ENTREGAS ==========
     console.log('🚚 Creando entregas...');
 
+    // NOTA: Las entregas se crean automáticamente cuando una ruta se completa
+    // Aquí creamos entregas de prueba para demostrar el módulo de seguimiento
+    // La ruta[1] ya está completada, así que le creamos su entrega correspondiente
     const entregasData = [
-      // Entrega pendiente - lista para iniciar
-      {
-        ruta: rutas[0]._id,
-        conductor: conductores[0]._id,
-        vehiculo: vehiculos[0]._id,
-        cliente: {
-          nombre: 'Roberto Gómez - TechCorp Ecuador',
-          direccion: 'Av. Eloy Alfaro N45-12, Quito',
-          telefono: '0981234567',
-          email: 'roberto@techcorp.ec',
-          coordenadas: {
-            latitud: -0.150207,
-            longitud: -78.478431,
-          },
-        },
-        origen: {
-          nombre: 'Bodega Central Quito',
-          direccion: 'Av. 10 de Agosto N35-120, Quito',
-          coordenadas: {
-            latitud: -0.180653,
-            longitud: -78.467834,
-          },
-        },
-        productos: [
-          {
-            producto: productos[0]._id,
-            cantidadProgramada: 10,
-            cantidadEntregada: 0,
-          },
-          {
-            producto: productos[1]._id,
-            cantidadProgramada: 20,
-            cantidadEntregada: 0,
-          },
-        ],
-        estado: 'pendiente',
-        fecha_programada: new Date('2026-02-05T08:00:00'),
-        distanciaTotal: 15.5,
-        tiempoEstimadoLlegada: 45,
-        observaciones: 'Cliente importante, entrega prioritaria',
-      },
-      // Entrega en proceso - para probar tracking
-      {
-        ruta: rutas[0]._id,
-        conductor: conductores[0]._id,
-        vehiculo: vehiculos[0]._id,
-        cliente: {
-          nombre: 'Farmacia San José',
-          direccion: 'Av. América N25-45, Quito',
-          telefono: '0998765432',
-          email: 'farmacia@sanjose.ec',
-          coordenadas: {
-            latitud: -0.2,
-            longitud: -78.5,
-          },
-        },
-        origen: {
-          nombre: 'Bodega Central Quito',
-          direccion: 'Av. 10 de Agosto N35-120, Quito',
-          coordenadas: {
-            latitud: -0.180653,
-            longitud: -78.467834,
-          },
-        },
-        productos: [
-          {
-            producto: productos[5]._id,
-            cantidadProgramada: 50,
-            cantidadEntregada: 0,
-          },
-        ],
-        estado: 'en_proceso',
-        fecha_programada: new Date('2026-02-03T09:00:00'),
-        fecha_inicio: new Date('2026-02-03T09:15:00'),
-        trackingActivo: true,
-        distanciaTotal: 8.5,
-        tiempoEstimadoLlegada: 30,
-        ubicacionActual: {
-          latitud: -0.185,
-          longitud: -78.48,
-          nombreUbicacion: 'Sector La Mariscal, Quito',
-          ultimaActualizacion: new Date(),
-        },
-        tracking: [
-          {
-            fecha: new Date('2026-02-03T09:15:00'),
-            latitud: -0.180653,
-            longitud: -78.467834,
-            nombreUbicacion: 'Bodega Central Quito',
-            velocidad: 0,
-            porcentajeRecorrido: 0,
-          },
-          {
-            fecha: new Date('2026-02-03T09:25:00'),
-            latitud: -0.185,
-            longitud: -78.48,
-            nombreUbicacion: 'Sector La Mariscal, Quito',
-            velocidad: 35,
-            porcentajeRecorrido: 25,
-          },
-        ],
-        observaciones: 'Medicamentos urgentes',
-      },
-      // Entrega completada
+      // Entrega completada - corresponde a ruta[1] (completada)
       {
         ruta: rutas[1]._id,
         conductor: conductores[1]._id,
@@ -731,12 +668,12 @@ const seedDatabase = async () => {
         },
         productos: [
           {
-            producto: productos[2]._id,
+            producto: productos[2]._id, // Arroz Diana
             cantidadProgramada: 50,
             cantidadEntregada: 50,
           },
           {
-            producto: productos[3]._id,
+            producto: productos[3]._id, // Aceite
             cantidadProgramada: 30,
             cantidadEntregada: 30,
           },
@@ -775,16 +712,129 @@ const seedDatabase = async () => {
           },
         ],
         calificacion: 5,
-        observaciones: 'Entrega completada sin novedades',
+        observaciones:
+          'Entrega completada sin novedades - Productos de alimentos',
       },
-      // Entrega retrasada
+      // Entrega en proceso - para probar tracking en vivo
+      {
+        ruta: rutas[0]._id,
+        conductor: conductores[0]._id,
+        vehiculo: vehiculos[0]._id,
+        cliente: {
+          nombre: 'TechCorp Ecuador - Roberto Gómez',
+          direccion: 'Av. Eloy Alfaro N45-12, Quito',
+          telefono: '0981234567',
+          email: 'roberto@techcorp.ec',
+          coordenadas: {
+            latitud: -0.150207,
+            longitud: -78.478431,
+          },
+        },
+        origen: {
+          nombre: 'Bodega Central Quito',
+          direccion: 'Av. 10 de Agosto N35-120, Quito',
+          coordenadas: {
+            latitud: -0.180653,
+            longitud: -78.467834,
+          },
+        },
+        productos: [
+          {
+            producto: productos[0]._id, // Laptop Dell
+            cantidadProgramada: 10,
+            cantidadEntregada: 0,
+          },
+          {
+            producto: productos[1]._id, // Mouse Logitech
+            cantidadProgramada: 20,
+            cantidadEntregada: 0,
+          },
+        ],
+        estado: 'en_proceso',
+        fecha_programada: new Date('2026-02-03T09:00:00'),
+        fecha_inicio: new Date('2026-02-03T09:15:00'),
+        trackingActivo: true,
+        distanciaTotal: 15.5,
+        distanciaRecorrida: 6.2,
+        tiempoEstimadoLlegada: 25,
+        ubicacionActual: {
+          latitud: -0.165,
+          longitud: -78.475,
+          nombreUbicacion: 'Sector La Carolina, Quito',
+          ultimaActualizacion: new Date(),
+        },
+        tracking: [
+          {
+            fecha: new Date('2026-02-03T09:15:00'),
+            latitud: -0.180653,
+            longitud: -78.467834,
+            nombreUbicacion: 'Bodega Central Quito',
+            velocidad: 0,
+            porcentajeRecorrido: 0,
+          },
+          {
+            fecha: new Date('2026-02-03T09:30:00'),
+            latitud: -0.175,
+            longitud: -78.47,
+            nombreUbicacion: 'Sector Mariscal Sucre',
+            velocidad: 35,
+            porcentajeRecorrido: 20,
+          },
+          {
+            fecha: new Date('2026-02-03T09:45:00'),
+            latitud: -0.165,
+            longitud: -78.475,
+            nombreUbicacion: 'Sector La Carolina, Quito',
+            velocidad: 40,
+            porcentajeRecorrido: 40,
+          },
+        ],
+        observaciones: 'Entrega de equipos tecnológicos - Cliente prioritario',
+      },
+      // Entrega pendiente - lista para iniciar
+      {
+        ruta: rutas[0]._id,
+        conductor: conductores[0]._id,
+        vehiculo: vehiculos[0]._id,
+        cliente: {
+          nombre: 'Farmacia Cruz Azul Central',
+          direccion: 'Av. Amazonas N24-56, Quito',
+          telefono: '0998765432',
+          email: 'pedidos@cruzazul.ec',
+          coordenadas: {
+            latitud: -0.19,
+            longitud: -78.49,
+          },
+        },
+        origen: {
+          nombre: 'Bodega Central Quito',
+          direccion: 'Av. 10 de Agosto N35-120, Quito',
+          coordenadas: {
+            latitud: -0.180653,
+            longitud: -78.467834,
+          },
+        },
+        productos: [
+          {
+            producto: productos[5]._id, // Acetaminofén
+            cantidadProgramada: 50,
+            cantidadEntregada: 0,
+          },
+        ],
+        estado: 'pendiente',
+        fecha_programada: new Date('2026-02-05T08:00:00'),
+        distanciaTotal: 5.8,
+        tiempoEstimadoLlegada: 20,
+        observaciones: 'Medicamentos - Entrega programada mañana',
+      },
+      // Entrega retrasada - para ver alertas
       {
         ruta: rutas[0]._id,
         conductor: conductores[0]._id,
         vehiculo: vehiculos[0]._id,
         cliente: {
           nombre: 'Distribuidora del Valle',
-          direccion: 'Av. Galo Plaza Lasso, Quito',
+          direccion: 'Av. Galo Plaza Lasso N45-89, Quito',
           telefono: '0987654321',
           email: 'pedidos@delvalle.ec',
           coordenadas: {
@@ -802,27 +852,27 @@ const seedDatabase = async () => {
         },
         productos: [
           {
-            producto: productos[4]._id,
+            producto: productos[4]._id, // Camisetas Polo
             cantidadProgramada: 100,
             cantidadEntregada: 0,
           },
         ],
         estado: 'retrasado',
-        fecha_programada: new Date('2026-02-05T14:00:00'),
-        fecha_inicio: new Date('2026-02-05T15:30:00'),
+        fecha_programada: new Date('2026-02-03T14:00:00'),
+        fecha_inicio: new Date('2026-02-03T15:30:00'),
         distanciaTotal: 12.0,
         distanciaRecorrida: 4.5,
         tiempoEstimadoLlegada: 60,
-        motivoRetraso: 'Tráfico pesado en Av. 10 de Agosto',
+        motivoRetraso: 'Tráfico pesado en Av. 10 de Agosto por accidente',
         ubicacionActual: {
           latitud: -0.16,
           longitud: -78.46,
           nombreUbicacion: 'Sector El Batán, Quito',
-          ultimaActualizacion: new Date('2026-02-05T16:45:00'),
+          ultimaActualizacion: new Date('2026-02-03T16:45:00'),
         },
         tracking: [
           {
-            fecha: new Date('2026-02-05T15:30:00'),
+            fecha: new Date('2026-02-03T15:30:00'),
             latitud: -0.180653,
             longitud: -78.467834,
             nombreUbicacion: 'Bodega Central Quito',
@@ -830,7 +880,7 @@ const seedDatabase = async () => {
             porcentajeRecorrido: 0,
           },
           {
-            fecha: new Date('2026-02-05T16:00:00'),
+            fecha: new Date('2026-02-03T16:00:00'),
             latitud: -0.17,
             longitud: -78.462,
             nombreUbicacion: 'Sector La Carolina',
@@ -838,7 +888,7 @@ const seedDatabase = async () => {
             porcentajeRecorrido: 20,
           },
           {
-            fecha: new Date('2026-02-05T16:45:00'),
+            fecha: new Date('2026-02-03T16:45:00'),
             latitud: -0.16,
             longitud: -78.46,
             nombreUbicacion: 'Sector El Batán, Quito',
@@ -847,42 +897,6 @@ const seedDatabase = async () => {
           },
         ],
         observaciones: 'Entrega demorada por congestión vehicular',
-      },
-      // Entrega en Cuenca - pendiente
-      {
-        ruta: rutas[2]._id,
-        conductor: conductores[1]._id,
-        vehiculo: vehiculos[1]._id,
-        cliente: {
-          nombre: 'Hospital del IESS Cuenca',
-          direccion: 'Av. Huayna Cápac y 12 de Abril, Cuenca',
-          telefono: '0978889999',
-          email: 'farmacia@iess.gob.ec',
-          coordenadas: {
-            latitud: -2.906889,
-            longitud: -79.010387,
-          },
-        },
-        origen: {
-          nombre: 'Bodega Sur Cuenca',
-          direccion: 'Av. Huayna Cápac 1-234, Cuenca',
-          coordenadas: {
-            latitud: -2.900128,
-            longitud: -79.005896,
-          },
-        },
-        productos: [
-          {
-            producto: productos[5]._id,
-            cantidadProgramada: 100,
-            cantidadEntregada: 0,
-          },
-        ],
-        estado: 'pendiente',
-        fecha_programada: new Date('2026-02-06T07:00:00'),
-        distanciaTotal: 5.3,
-        tiempoEstimadoLlegada: 20,
-        observaciones: 'Entrega de medicamentos - Prioridad Alta',
       },
     ];
 
@@ -923,10 +937,16 @@ const seedDatabase = async () => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     console.log('📬 ENTREGAS PARA PRUEBA:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('• 2 Pendientes (listas para iniciar)');
-    console.log('• 1 En Proceso (con tracking activo)');
-    console.log('• 1 Entregada (historial completo)');
-    console.log('• 1 Retrasada (para ver alertas)');
+    console.log('• 1 Pendiente (lista para iniciar)');
+    console.log('• 1 En Proceso (con tracking activo - simula en vivo)');
+    console.log('• 1 Entregada (historial completo - ruta completada)');
+    console.log('• 1 Retrasada (para ver alertas de demora)');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    console.log('📊 MOVIMIENTOS DE INVENTARIO:');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('• 5 Entradas (compras a bodegas específicas)');
+    console.log('• 4 Salidas (ventas y ajustes desde bodegas)');
+    console.log('• 2 Transferencias (entre bodegas)');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
     // Cerrar conexión

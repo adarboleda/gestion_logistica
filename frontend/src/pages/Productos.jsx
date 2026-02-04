@@ -431,6 +431,12 @@ function Productos() {
             style={{ minWidth: '120px' }}
           />
           <Column
+            header="Bodega"
+            body={(rowData) => rowData.bodega?.nombre || 'N/A'}
+            sortable
+            style={{ minWidth: '150px' }}
+          />
+          <Column
             field="activo"
             header="Estado"
             body={activoTemplate}

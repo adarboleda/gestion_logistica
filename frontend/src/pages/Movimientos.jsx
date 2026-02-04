@@ -30,7 +30,8 @@ function Movimientos() {
   const [formData, setFormData] = useState({
     tipo: '',
     producto: null,
-    bodega: null,
+    bodegaOrigen: null,
+    bodegaDestino: null,
     cantidad: 0,
     motivoMovimiento: '',
     documentoReferencia: '',
@@ -97,7 +98,8 @@ function Movimientos() {
     setFormData({
       tipo: '',
       producto: null,
-      bodega: null,
+      bodegaOrigen: null,
+      bodegaDestino: null,
       cantidad: 0,
       motivoMovimiento: '',
       documentoReferencia: '',
@@ -120,6 +122,28 @@ function Movimientos() {
         life: 3000,
       });
       return;
+    }
+
+    // Validación adicional para transferencias
+    if (formData.tipo === 'transferencia') {
+      if (!formData.bodegaOrigen || !formData.bodegaDestino) {
+        toast.current?.show({
+          severity: 'warn',
+          summary: 'Validación',
+          detail: 'Las transferencias requieren bodega de origen y destino',
+          life: 3000,
+        });
+        return;
+      }
+      if (formData.bodegaOrigen === formData.bodegaDestino) {
+        toast.current?.show({
+          severity: 'warn',
+          summary: 'Validación',
+          detail: 'La bodega de origen y destino no pueden ser la misma',
+          life: 3000,
+        });
+        return;
+      }
     }
 
     setLoading(true);
@@ -151,14 +175,22 @@ function Movimientos() {
 
   // Templates
   const tipoTemplate = (rowData) => {
+    const tipoConfig = {
+      entrada: {
+        label: 'Entrada',
+        severity: 'success',
+        icon: 'pi pi-arrow-down',
+      },
+      salida: { label: 'Salida', severity: 'warning', icon: 'pi pi-arrow-up' },
+      transferencia: {
+        label: 'Transferencia',
+        severity: 'info',
+        icon: 'pi pi-arrows-h',
+      },
+    };
+    const config = tipoConfig[rowData.tipo] || tipoConfig.entrada;
     return (
-      <Tag
-        value={rowData.tipo === 'entrada' ? 'Entrada' : 'Salida'}
-        severity={rowData.tipo === 'entrada' ? 'success' : 'warning'}
-        icon={
-          rowData.tipo === 'entrada' ? 'pi pi-arrow-down' : 'pi pi-arrow-up'
-        }
-      />
+      <Tag value={config.label} severity={config.severity} icon={config.icon} />
     );
   };
 
@@ -429,21 +461,55 @@ function Movimientos() {
             />
           </div>
 
-          <div className="col-span-1">
-            <label
-              className="block mb-2 font-semibold"
-              style={{ color: 'var(--color-secondary)' }}
-            >
-              Bodega
-            </label>
-            <Dropdown
-              value={formData.bodega}
-              onChange={(e) => setFormData({ ...formData, bodega: e.value })}
-              options={bodegas.map((b) => ({ label: b.nombre, value: b._id }))}
-              placeholder="Seleccione"
-              className="w-full"
-            />
-          </div>
+          {/* Bodega Origen - solo para salidas y transferencias */}
+          {(formData.tipo === 'salida' ||
+            formData.tipo === 'transferencia') && (
+            <div className="col-span-1">
+              <label
+                className="block mb-2 font-semibold"
+                style={{ color: 'var(--color-secondary)' }}
+              >
+                Bodega Origen {formData.tipo === 'transferencia' ? '*' : ''}
+              </label>
+              <Dropdown
+                value={formData.bodegaOrigen}
+                onChange={(e) =>
+                  setFormData({ ...formData, bodegaOrigen: e.value })
+                }
+                options={bodegas.map((b) => ({
+                  label: b.nombre,
+                  value: b._id,
+                }))}
+                placeholder="Seleccione"
+                className="w-full"
+              />
+            </div>
+          )}
+
+          {/* Bodega Destino - solo para entradas y transferencias */}
+          {(formData.tipo === 'entrada' ||
+            formData.tipo === 'transferencia') && (
+            <div className="col-span-1">
+              <label
+                className="block mb-2 font-semibold"
+                style={{ color: 'var(--color-secondary)' }}
+              >
+                Bodega Destino {formData.tipo === 'transferencia' ? '*' : ''}
+              </label>
+              <Dropdown
+                value={formData.bodegaDestino}
+                onChange={(e) =>
+                  setFormData({ ...formData, bodegaDestino: e.value })
+                }
+                options={bodegas.map((b) => ({
+                  label: b.nombre,
+                  value: b._id,
+                }))}
+                placeholder="Seleccione"
+                className="w-full"
+              />
+            </div>
+          )}
 
           <div className="col-span-2">
             <label

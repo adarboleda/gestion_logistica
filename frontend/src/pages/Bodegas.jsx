@@ -376,17 +376,17 @@ function Bodegas() {
             style={{ minWidth: '250px' }}
           />
           <Column
+            field="direccion.codigoPostal"
+            header="Código Postal"
+            sortable
+            style={{ minWidth: '120px' }}
+          />
+          <Column
             field="capacidadMaxima"
             header="Capacidad"
             body={capacidadTemplate}
             sortable
             style={{ minWidth: '120px' }}
-          />
-          <Column
-            field="descripcion"
-            header="Descripción"
-            sortable
-            style={{ minWidth: '200px' }}
           />
           <Column
             field="estado"

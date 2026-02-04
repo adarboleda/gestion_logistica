@@ -392,6 +392,17 @@ function Usuarios() {
             style={{ minWidth: '100px' }}
           />
           <Column
+            field="createdAt"
+            header="Creado"
+            body={(rowData) =>
+              rowData.createdAt
+                ? new Date(rowData.createdAt).toLocaleDateString('es-EC')
+                : 'N/A'
+            }
+            sortable
+            style={{ minWidth: '110px' }}
+          />
+          <Column
             header="Acciones"
             body={accionesTemplate}
             style={{ minWidth: '180px' }}

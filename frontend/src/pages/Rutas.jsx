@@ -442,7 +442,8 @@ function Rutas() {
 
   const completarRutaHandler = async (ruta) => {
     confirmDialog({
-      message: '¿Está seguro de completar esta ruta?',
+      message:
+        '¿Está seguro de completar esta ruta? Se creará automáticamente un registro de entrega.',
       header: 'Confirmar',
       icon: 'pi pi-check-circle',
       accept: async () => {
@@ -454,7 +455,7 @@ function Rutas() {
             toast.current?.show({
               severity: 'success',
               summary: 'Éxito',
-              detail: 'Ruta completada correctamente',
+              detail: 'Ruta completada y entrega registrada correctamente',
               life: 3000,
             });
             cargarRutas();

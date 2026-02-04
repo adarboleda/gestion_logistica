@@ -14,6 +14,8 @@ function Dashboard() {
     rutasActivas: 0,
     rutasCompletadas: 0,
     usuarios: 0,
+    entregasPendientes: 0,
+    entregasEnProceso: 0,
   });
   const [historialEntregas, setHistorialEntregas] = useState([]);
 
@@ -62,6 +64,21 @@ function Dashboard() {
       const movimientosHoy =
         respMovimientos.data?.data?.movimientos?.length || 0;
 
+      // Cargar entregas
+      let entregasPendientes = 0;
+      let entregasEnProceso = 0;
+      try {
+        const respEntregas = await api.get('/entregas?limit=100');
+        if (respEntregas.data?.data?.estadisticas) {
+          entregasPendientes =
+            respEntregas.data.data.estadisticas.pendientes || 0;
+          entregasEnProceso =
+            respEntregas.data.data.estadisticas.en_proceso || 0;
+        }
+      } catch (e) {
+        console.error('Error cargando entregas:', e);
+      }
+
       // Cargar historial de entregas
       try {
         const respHistorial = await api.get(
@@ -81,6 +98,8 @@ function Dashboard() {
         rutasActivas,
         rutasCompletadas,
         usuarios: 0,
+        entregasPendientes,
+        entregasEnProceso,
       });
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
@@ -131,6 +150,18 @@ function Dashboard() {
       value: stats.rutasCompletadas,
       icon: 'pi-check-circle',
       color: 'bg-teal-500',
+    },
+    {
+      label: 'Entregas Pendientes',
+      value: stats.entregasPendientes,
+      icon: 'pi-clock',
+      color: 'bg-amber-500',
+    },
+    {
+      label: 'Entregas en Proceso',
+      value: stats.entregasEnProceso,
+      icon: 'pi-truck',
+      color: 'bg-cyan-500',
     },
   ];
 

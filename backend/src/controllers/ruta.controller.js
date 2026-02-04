@@ -2,6 +2,7 @@ import Ruta from '../models/Ruta.js';
 import Vehiculo from '../models/Vehiculo.js';
 import Usuario from '../models/Usuario.js';
 import Producto from '../models/Producto.js';
+import Entrega from '../models/Entrega.js';
 
 /**
  * @desc    Obtener todas las rutas con paginación y filtros
@@ -342,6 +343,40 @@ export const cambiarEstadoRuta = async (req, res) => {
       ruta.fecha_fin_real = new Date();
       // Liberar vehículo
       await Vehiculo.findByIdAndUpdate(ruta.vehiculo, { estado: 'disponible' });
+
+      // Crear entrega automáticamente cuando la ruta se completa
+      await ruta.populate('conductor vehiculo lista_productos.producto');
+
+      const entrega = await Entrega.create({
+        ruta: ruta._id,
+        conductor: ruta.conductor._id,
+        vehiculo: ruta.vehiculo._id,
+        cliente: {
+          nombre: ruta.destino.nombre,
+          direccion: ruta.destino.direccion,
+          telefono: ruta.destino.contacto?.telefono,
+          email: ruta.destino.contacto?.email,
+          coordenadas: ruta.destino.coordenadas,
+        },
+        origen: {
+          nombre: ruta.origen.nombre,
+          direccion: ruta.origen.direccion,
+          coordenadas: ruta.origen.coordenadas,
+        },
+        productos: ruta.lista_productos.map((p) => ({
+          producto: p.producto._id,
+          cantidadProgramada: p.cantidad,
+          cantidadEntregada: p.cantidad, // Se entrega todo al completar
+        })),
+        fecha_programada: ruta.fecha_programada,
+        fecha_entrega: new Date(),
+        distanciaTotal: ruta.distancia_km || 0,
+        tiempoEstimadoLlegada: (ruta.tiempo_estimado_horas || 1) * 60,
+        estado: 'entregado',
+      });
+
+      // Agregar la entrega creada a la respuesta
+      ruta._doc.entregaCreada = entrega._id;
     }
 
     if (estado === 'cancelada') {

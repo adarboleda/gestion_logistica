@@ -188,7 +188,11 @@ export const obtenerMovimientos = async (req, res) => {
     const skip = (page - 1) * limit;
 
     const movimientos = await Movimiento.find(filtro)
-      .populate('producto', 'nombre codigo unidadMedida')
+      .populate({
+        path: 'producto',
+        select: 'nombre codigo unidadMedida bodega',
+        populate: { path: 'bodega', select: 'nombre' },
+      })
       .populate('usuario_responsable', 'nombre email rol')
       .populate('bodegaOrigen', 'nombre')
       .populate('bodegaDestino', 'nombre')

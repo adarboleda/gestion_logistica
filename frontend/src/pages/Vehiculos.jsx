@@ -53,7 +53,6 @@ function Vehiculos() {
     { label: 'Disponible', value: 'disponible' },
     { label: 'En ruta', value: 'en_ruta' },
     { label: 'Mantenimiento', value: 'mantenimiento' },
-    { label: 'Fuera de servicio', value: 'fuera_servicio' },
   ];
 
   useEffect(() => {
@@ -198,22 +197,42 @@ function Vehiculos() {
       disponible: 'success',
       en_ruta: 'info',
       mantenimiento: 'warning',
-      fuera_servicio: 'danger',
     };
 
     const labelMap = {
       disponible: 'Disponible',
       en_ruta: 'En Ruta',
       mantenimiento: 'Mantenimiento',
-      fuera_servicio: 'Fuera de Servicio',
     };
 
     return (
       <Tag
-        value={labelMap[rowData.estado]}
-        severity={severityMap[rowData.estado]}
+        value={labelMap[rowData.estado] || rowData.estado}
+        severity={severityMap[rowData.estado] || 'secondary'}
       />
     );
+  };
+
+  const conductorTemplate = (rowData) => {
+    return rowData.conductor_asignado ? (
+      <div>
+        <div className="font-semibold">{rowData.conductor_asignado.nombre}</div>
+        <div
+          className="text-sm"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          {rowData.conductor_asignado.telefono || ''}
+        </div>
+      </div>
+    ) : (
+      <span style={{ color: 'var(--color-text-secondary)' }}>Sin asignar</span>
+    );
+  };
+
+  const kilometrajeTemplate = (rowData) => {
+    return rowData.kilometraje
+      ? `${rowData.kilometraje.toLocaleString('es-EC')} km`
+      : '0 km';
   };
 
   const capacidadTemplate = (rowData) => {
@@ -375,6 +394,17 @@ function Vehiculos() {
           <Column
             header="Capacidad"
             body={capacidadTemplate}
+            style={{ minWidth: '120px' }}
+          />
+          <Column
+            header="Conductor"
+            body={conductorTemplate}
+            style={{ minWidth: '180px' }}
+          />
+          <Column
+            header="Kilometraje"
+            body={kilometrajeTemplate}
+            sortable
             style={{ minWidth: '120px' }}
           />
           <Column
