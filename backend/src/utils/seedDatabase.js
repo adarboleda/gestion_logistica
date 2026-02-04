@@ -95,10 +95,6 @@ const seedDatabase = async () => {
           ciudad: 'Quito',
           estado: 'Pichincha',
           codigoPostal: '170507',
-          coordenadas: {
-            latitud: -0.180653,
-            longitud: -78.467834,
-          },
         },
         estado: 'activa',
         capacidadMaxima: 10000,
@@ -111,10 +107,6 @@ const seedDatabase = async () => {
           ciudad: 'Guayaquil',
           estado: 'Guayas',
           codigoPostal: '090101',
-          coordenadas: {
-            latitud: -2.203816,
-            longitud: -79.897453,
-          },
         },
         estado: 'activa',
         capacidadMaxima: 8000,
@@ -127,10 +119,6 @@ const seedDatabase = async () => {
           ciudad: 'Cuenca',
           estado: 'Azuay',
           codigoPostal: '010101',
-          coordenadas: {
-            latitud: -2.900128,
-            longitud: -79.005896,
-          },
         },
         estado: 'activa',
         capacidadMaxima: 6000,
@@ -639,9 +627,9 @@ const seedDatabase = async () => {
     // ========== CREAR ENTREGAS ==========
     console.log('🚚 Creando entregas...');
 
-    // NOTA: Las entregas se crean automáticamente cuando una ruta se completa
-    // Aquí creamos entregas de prueba para demostrar el módulo de seguimiento
-    // La ruta[1] ya está completada, así que le creamos su entrega correspondiente
+    // NOTA: Las entregas se crean automáticamente cuando una ruta pasa a estado 'en_transito'
+    // El conductor marca el estado final de la entrega (entregado, parcial, rechazado, etc.)
+    // El tracking GPS está en el modelo de Ruta, no en Entrega
     const entregasData = [
       // Entrega completada - corresponde a ruta[1] (completada)
       {
@@ -653,18 +641,10 @@ const seedDatabase = async () => {
           direccion: 'Av. Francisco de Orellana, Guayaquil',
           telefono: '0429876543',
           email: 'bodega@favorita.com',
-          coordenadas: {
-            latitud: -2.170833,
-            longitud: -79.890553,
-          },
         },
         origen: {
           nombre: 'Bodega Puerto Guayaquil',
           direccion: 'Av. de las Américas Km 6.5, Guayaquil',
-          coordenadas: {
-            latitud: -2.203816,
-            longitud: -79.897453,
-          },
         },
         productos: [
           {
@@ -680,42 +660,12 @@ const seedDatabase = async () => {
         ],
         estado: 'entregado',
         fecha_programada: new Date('2026-02-04T10:00:00'),
-        fecha_inicio: new Date('2026-02-04T09:55:00'),
         fecha_entrega: new Date('2026-02-04T11:20:00'),
-        distanciaTotal: 8.2,
-        distanciaRecorrida: 8.2,
-        tiempoEstimadoLlegada: 0,
-        tracking: [
-          {
-            fecha: new Date('2026-02-04T10:00:00'),
-            latitud: -2.203816,
-            longitud: -79.897453,
-            nombreUbicacion: 'Bodega Puerto Guayaquil',
-            velocidad: 0,
-            porcentajeRecorrido: 0,
-          },
-          {
-            fecha: new Date('2026-02-04T10:25:00'),
-            latitud: -2.19,
-            longitud: -79.893,
-            nombreUbicacion: 'Kennedy Norte, Guayaquil',
-            velocidad: 45,
-            porcentajeRecorrido: 50,
-          },
-          {
-            fecha: new Date('2026-02-04T11:15:00'),
-            latitud: -2.170833,
-            longitud: -79.890553,
-            nombreUbicacion: 'Supermercado La Favorita',
-            velocidad: 0,
-            porcentajeRecorrido: 100,
-          },
-        ],
         calificacion: 5,
         observaciones:
           'Entrega completada sin novedades - Productos de alimentos',
       },
-      // Entrega en proceso - para probar tracking en vivo
+      // Entrega pendiente - ruta en tránsito, esperando que conductor marque estado
       {
         ruta: rutas[0]._id,
         conductor: conductores[0]._id,
@@ -725,18 +675,10 @@ const seedDatabase = async () => {
           direccion: 'Av. Eloy Alfaro N45-12, Quito',
           telefono: '0981234567',
           email: 'roberto@techcorp.ec',
-          coordenadas: {
-            latitud: -0.150207,
-            longitud: -78.478431,
-          },
         },
         origen: {
           nombre: 'Bodega Central Quito',
           direccion: 'Av. 10 de Agosto N35-120, Quito',
-          coordenadas: {
-            latitud: -0.180653,
-            longitud: -78.467834,
-          },
         },
         productos: [
           {
@@ -750,48 +692,11 @@ const seedDatabase = async () => {
             cantidadEntregada: 0,
           },
         ],
-        estado: 'en_proceso',
-        fecha_programada: new Date('2026-02-03T09:00:00'),
-        fecha_inicio: new Date('2026-02-03T09:15:00'),
-        trackingActivo: true,
-        distanciaTotal: 15.5,
-        distanciaRecorrida: 6.2,
-        tiempoEstimadoLlegada: 25,
-        ubicacionActual: {
-          latitud: -0.165,
-          longitud: -78.475,
-          nombreUbicacion: 'Sector La Carolina, Quito',
-          ultimaActualizacion: new Date(),
-        },
-        tracking: [
-          {
-            fecha: new Date('2026-02-03T09:15:00'),
-            latitud: -0.180653,
-            longitud: -78.467834,
-            nombreUbicacion: 'Bodega Central Quito',
-            velocidad: 0,
-            porcentajeRecorrido: 0,
-          },
-          {
-            fecha: new Date('2026-02-03T09:30:00'),
-            latitud: -0.175,
-            longitud: -78.47,
-            nombreUbicacion: 'Sector Mariscal Sucre',
-            velocidad: 35,
-            porcentajeRecorrido: 20,
-          },
-          {
-            fecha: new Date('2026-02-03T09:45:00'),
-            latitud: -0.165,
-            longitud: -78.475,
-            nombreUbicacion: 'Sector La Carolina, Quito',
-            velocidad: 40,
-            porcentajeRecorrido: 40,
-          },
-        ],
+        estado: 'pendiente',
+        fecha_programada: new Date('2026-02-05T08:00:00'),
         observaciones: 'Entrega de equipos tecnológicos - Cliente prioritario',
       },
-      // Entrega pendiente - lista para iniciar
+      // Entrega parcial - algunos productos no entregados
       {
         ruta: rutas[0]._id,
         conductor: conductores[0]._id,
@@ -801,33 +706,26 @@ const seedDatabase = async () => {
           direccion: 'Av. Amazonas N24-56, Quito',
           telefono: '0998765432',
           email: 'pedidos@cruzazul.ec',
-          coordenadas: {
-            latitud: -0.19,
-            longitud: -78.49,
-          },
         },
         origen: {
           nombre: 'Bodega Central Quito',
           direccion: 'Av. 10 de Agosto N35-120, Quito',
-          coordenadas: {
-            latitud: -0.180653,
-            longitud: -78.467834,
-          },
         },
         productos: [
           {
             producto: productos[5]._id, // Acetaminofén
             cantidadProgramada: 50,
-            cantidadEntregada: 0,
+            cantidadEntregada: 30,
+            observacion: 'Solo había espacio en farmacia para 30 cajas',
           },
         ],
-        estado: 'pendiente',
-        fecha_programada: new Date('2026-02-05T08:00:00'),
-        distanciaTotal: 5.8,
-        tiempoEstimadoLlegada: 20,
-        observaciones: 'Medicamentos - Entrega programada mañana',
+        estado: 'parcial',
+        fecha_programada: new Date('2026-02-03T08:00:00'),
+        fecha_entrega: new Date('2026-02-03T09:45:00'),
+        observaciones: 'Entrega parcial por falta de espacio en farmacia',
+        calificacion: 4,
       },
-      // Entrega retrasada - para ver alertas
+      // Entrega rechazada - cliente rechazó la entrega
       {
         ruta: rutas[0]._id,
         conductor: conductores[0]._id,
@@ -837,18 +735,10 @@ const seedDatabase = async () => {
           direccion: 'Av. Galo Plaza Lasso N45-89, Quito',
           telefono: '0987654321',
           email: 'pedidos@delvalle.ec',
-          coordenadas: {
-            latitud: -0.12,
-            longitud: -78.45,
-          },
         },
         origen: {
           nombre: 'Bodega Central Quito',
           direccion: 'Av. 10 de Agosto N35-120, Quito',
-          coordenadas: {
-            latitud: -0.180653,
-            longitud: -78.467834,
-          },
         },
         productos: [
           {
@@ -857,46 +747,13 @@ const seedDatabase = async () => {
             cantidadEntregada: 0,
           },
         ],
-        estado: 'retrasado',
-        fecha_programada: new Date('2026-02-03T14:00:00'),
-        fecha_inicio: new Date('2026-02-03T15:30:00'),
-        distanciaTotal: 12.0,
-        distanciaRecorrida: 4.5,
-        tiempoEstimadoLlegada: 60,
-        motivoRetraso: 'Tráfico pesado en Av. 10 de Agosto por accidente',
-        ubicacionActual: {
-          latitud: -0.16,
-          longitud: -78.46,
-          nombreUbicacion: 'Sector El Batán, Quito',
-          ultimaActualizacion: new Date('2026-02-03T16:45:00'),
-        },
-        tracking: [
-          {
-            fecha: new Date('2026-02-03T15:30:00'),
-            latitud: -0.180653,
-            longitud: -78.467834,
-            nombreUbicacion: 'Bodega Central Quito',
-            velocidad: 0,
-            porcentajeRecorrido: 0,
-          },
-          {
-            fecha: new Date('2026-02-03T16:00:00'),
-            latitud: -0.17,
-            longitud: -78.462,
-            nombreUbicacion: 'Sector La Carolina',
-            velocidad: 15,
-            porcentajeRecorrido: 20,
-          },
-          {
-            fecha: new Date('2026-02-03T16:45:00'),
-            latitud: -0.16,
-            longitud: -78.46,
-            nombreUbicacion: 'Sector El Batán, Quito',
-            velocidad: 8,
-            porcentajeRecorrido: 35,
-          },
-        ],
-        observaciones: 'Entrega demorada por congestión vehicular',
+        estado: 'rechazado',
+        fecha_programada: new Date('2026-02-02T14:00:00'),
+        fecha_entrega: new Date('2026-02-02T15:30:00'),
+        motivoNoEntrega:
+          'Cliente rechazó por tallas incorrectas - pidió talla L en lugar de M',
+        observaciones:
+          'Mercadería devuelta a bodega - Coordinador debe gestionar cambio de tallas',
       },
     ];
 
@@ -937,10 +794,14 @@ const seedDatabase = async () => {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     console.log('📬 ENTREGAS PARA PRUEBA:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('• 1 Pendiente (lista para iniciar)');
-    console.log('• 1 En Proceso (con tracking activo - simula en vivo)');
-    console.log('• 1 Entregada (historial completo - ruta completada)');
-    console.log('• 1 Retrasada (para ver alertas de demora)');
+    console.log('• 1 Pendiente (esperando que conductor marque estado)');
+    console.log('• 1 Entregada (completada exitosamente con calificación)');
+    console.log('• 1 Parcial (entrega parcial por falta de espacio)');
+    console.log('• 1 Rechazada (cliente rechazó por tallas incorrectas)');
+    console.log('\n💡 NOTA: El tracking GPS está en Rutas, no en Entregas');
+    console.log(
+      '   Las entregas se crean cuando la ruta pasa a estado en_transito',
+    );
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     console.log('📊 MOVIMIENTOS DE INVENTARIO:');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

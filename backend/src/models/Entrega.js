@@ -1,42 +1,12 @@
 import mongoose from 'mongoose';
 
-// Schema para el tracking de ubicación simulado
-const ubicacionTrackingSchema = new mongoose.Schema(
-  {
-    fecha: {
-      type: Date,
-      default: Date.now,
-    },
-    latitud: {
-      type: Number,
-      required: true,
-      min: -90,
-      max: 90,
-    },
-    longitud: {
-      type: Number,
-      required: true,
-      min: -180,
-      max: 180,
-    },
-    nombreUbicacion: {
-      type: String,
-      trim: true,
-    },
-    velocidad: {
-      type: Number,
-      min: 0,
-      default: 0,
-    },
-    porcentajeRecorrido: {
-      type: Number,
-      min: 0,
-      max: 100,
-      default: 0,
-    },
-  },
-  { _id: false },
-);
+/**
+ * Modelo simplificado de Entrega
+ * La Entrega se crea automáticamente cuando una Ruta pasa a estado 'en_transito'
+ * El conductor usa este registro para marcar el estado final de la entrega.
+ *
+ * IMPORTANTE: El tracking GPS está en el modelo de Ruta, no aquí.
+ */
 
 // Schema para los productos entregados
 const productoEntregadoSchema = new mongoose.Schema(
@@ -106,18 +76,6 @@ const entregaSchema = new mongoose.Schema(
         trim: true,
         lowercase: true,
       },
-      coordenadas: {
-        latitud: {
-          type: Number,
-          min: -90,
-          max: 90,
-        },
-        longitud: {
-          type: Number,
-          min: -180,
-          max: 180,
-        },
-      },
     },
     origen: {
       nombre: {
@@ -130,29 +88,18 @@ const entregaSchema = new mongoose.Schema(
         required: true,
         trim: true,
       },
-      coordenadas: {
-        latitud: {
-          type: Number,
-          min: -90,
-          max: 90,
-        },
-        longitud: {
-          type: Number,
-          min: -180,
-          max: 180,
-        },
-      },
     },
     productos: [productoEntregadoSchema],
     estado: {
       type: String,
       enum: {
         values: [
-          'pendiente',
-          'en_proceso',
-          'entregado',
-          'retrasado',
-          'cancelado',
+          'pendiente', // Ruta en_transito, esperando llegada
+          'entregado', // Entrega completada exitosamente
+          'parcial', // Entrega parcial (no todos los productos)
+          'rechazado', // Cliente rechazó la entrega
+          'no_encontrado', // No se encontró al cliente
+          'reprogramado', // Se debe reprogramar
         ],
         message: '{VALUE} no es un estado válido',
       },
@@ -163,50 +110,23 @@ const entregaSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'La fecha programada es obligatoria'],
     },
-    fecha_inicio: {
-      type: Date,
-    },
     fecha_entrega: {
       type: Date,
-    },
-    tracking: [ubicacionTrackingSchema],
-    trackingActivo: {
-      type: Boolean,
-      default: false,
-    },
-    ubicacionActual: {
-      latitud: Number,
-      longitud: Number,
-      nombreUbicacion: String,
-      ultimaActualizacion: Date,
-    },
-    tiempoEstimadoLlegada: {
-      type: Number, // en minutos
-      min: 0,
-    },
-    distanciaTotal: {
-      type: Number, // en km
-      min: 0,
-    },
-    distanciaRecorrida: {
-      type: Number,
-      default: 0,
-      min: 0,
     },
     observaciones: {
       type: String,
       trim: true,
       maxlength: [1000, 'Las observaciones no pueden exceder 1000 caracteres'],
     },
-    motivoRetraso: {
+    motivoNoEntrega: {
       type: String,
       trim: true,
     },
     firma: {
-      type: String, // URL o base64 de la firma digital
+      type: String,
     },
     fotoEntrega: {
-      type: String, // URL de la foto de entrega
+      type: String,
     },
     calificacion: {
       type: Number,
@@ -243,17 +163,10 @@ entregaSchema.pre('save', async function (next) {
 // Índices
 entregaSchema.index({ estado: 1, fecha_programada: 1 });
 entregaSchema.index({ conductor: 1, estado: 1 });
-entregaSchema.index({ fecha_programada: -1 });
+entregaSchema.index({ ruta: 1 });
 entregaSchema.index({ createdAt: -1 });
 
-// Virtual para verificar si está retrasada
-entregaSchema.virtual('estaRetrasada').get(function () {
-  if (this.estado === 'entregado' || this.estado === 'cancelado') return false;
-  const ahora = new Date();
-  return this.fecha_programada < ahora && this.estado !== 'entregado';
-});
-
-// Virtual para calcular progreso de entrega
+// Virtual para calcular progreso de entrega de productos
 entregaSchema.virtual('progresoProductos').get(function () {
   if (!this.productos || this.productos.length === 0) return 0;
   const totalProgramado = this.productos.reduce(
@@ -269,75 +182,102 @@ entregaSchema.virtual('progresoProductos').get(function () {
     : 0;
 });
 
-// Método para iniciar entrega
-entregaSchema.methods.iniciarEntrega = async function () {
-  if (this.estado !== 'pendiente') {
-    throw new Error('Solo se pueden iniciar entregas pendientes');
-  }
-  this.estado = 'en_proceso';
-  this.fecha_inicio = new Date();
-  this.trackingActivo = true;
-  return await this.save();
-};
+// Virtual para verificar si está completada (cualquier estado final)
+entregaSchema.virtual('estaCompletada').get(function () {
+  return [
+    'entregado',
+    'parcial',
+    'rechazado',
+    'no_encontrado',
+    'reprogramado',
+  ].includes(this.estado);
+});
 
-// Método para marcar como entregado
-entregaSchema.methods.completarEntrega = async function (datosEntrega = {}) {
-  if (this.estado !== 'en_proceso' && this.estado !== 'retrasado') {
-    throw new Error(
-      'Solo se pueden completar entregas en proceso o retrasadas',
-    );
+/**
+ * Marcar como entregado completamente
+ * @param {Object} datos - Datos de la entrega {observaciones, firma, fotoEntrega, calificacion}
+ */
+entregaSchema.methods.marcarEntregado = async function (datos = {}) {
+  if (this.estado !== 'pendiente') {
+    throw new Error('Solo se pueden marcar entregas pendientes');
   }
 
   this.estado = 'entregado';
   this.fecha_entrega = new Date();
-  this.trackingActivo = false;
 
-  if (datosEntrega.firma) this.firma = datosEntrega.firma;
-  if (datosEntrega.fotoEntrega) this.fotoEntrega = datosEntrega.fotoEntrega;
-  if (datosEntrega.observaciones)
-    this.observaciones = datosEntrega.observaciones;
-  if (datosEntrega.calificacion) this.calificacion = datosEntrega.calificacion;
+  if (datos.firma) this.firma = datos.firma;
+  if (datos.fotoEntrega) this.fotoEntrega = datos.fotoEntrega;
+  if (datos.observaciones) this.observaciones = datos.observaciones;
+  if (datos.calificacion) this.calificacion = datos.calificacion;
 
-  // Marcar todos los productos como entregados si no se especificó
+  // Marcar todos los productos como entregados completamente
   this.productos.forEach((p) => {
-    if (p.cantidadEntregada === 0) {
-      p.cantidadEntregada = p.cantidadProgramada;
+    p.cantidadEntregada = p.cantidadProgramada;
+  });
+
+  return await this.save();
+};
+
+/**
+ * Marcar como entrega parcial
+ * @param {Array} productosEntregados - Array con {productoId, cantidadEntregada, observacion}
+ * @param {Object} datos - Datos adicionales
+ */
+entregaSchema.methods.marcarParcial = async function (
+  productosEntregados = [],
+  datos = {},
+) {
+  if (this.estado !== 'pendiente') {
+    throw new Error('Solo se pueden marcar entregas pendientes');
+  }
+
+  this.estado = 'parcial';
+  this.fecha_entrega = new Date();
+
+  // Actualizar cantidades entregadas por producto
+  productosEntregados.forEach((pe) => {
+    const producto = this.productos.find(
+      (p) => p.producto.toString() === pe.productoId.toString(),
+    );
+    if (producto) {
+      producto.cantidadEntregada = pe.cantidadEntregada;
+      if (pe.observacion) producto.observacion = pe.observacion;
     }
   });
 
+  if (datos.firma) this.firma = datos.firma;
+  if (datos.fotoEntrega) this.fotoEntrega = datos.fotoEntrega;
+  if (datos.observaciones) this.observaciones = datos.observaciones;
+
   return await this.save();
 };
 
-// Método para marcar como retrasado
-entregaSchema.methods.marcarRetrasado = async function (motivo) {
-  if (this.estado === 'entregado' || this.estado === 'cancelado') {
-    throw new Error('No se puede marcar como retrasada una entrega finalizada');
+/**
+ * Marcar como no entregado (rechazado, no encontrado, reprogramado)
+ * @param {String} motivo - El motivo de no entrega
+ * @param {String} nuevoEstado - El nuevo estado (rechazado, no_encontrado, reprogramado)
+ * @param {Object} datos - Datos adicionales
+ */
+entregaSchema.methods.marcarNoEntregado = async function (
+  motivo,
+  nuevoEstado = 'rechazado',
+  datos = {},
+) {
+  if (this.estado !== 'pendiente') {
+    throw new Error('Solo se pueden marcar entregas pendientes');
   }
-  this.estado = 'retrasado';
-  this.motivoRetraso = motivo;
-  return await this.save();
-};
 
-// Método para agregar punto de tracking
-entregaSchema.methods.agregarPuntoTracking = async function (datos) {
-  this.tracking.push({
-    latitud: datos.latitud,
-    longitud: datos.longitud,
-    nombreUbicacion: datos.nombreUbicacion,
-    velocidad: datos.velocidad || 0,
-    porcentajeRecorrido: datos.porcentajeRecorrido || 0,
-  });
-
-  this.ubicacionActual = {
-    latitud: datos.latitud,
-    longitud: datos.longitud,
-    nombreUbicacion: datos.nombreUbicacion,
-    ultimaActualizacion: new Date(),
-  };
-
-  if (datos.distanciaRecorrida) {
-    this.distanciaRecorrida = datos.distanciaRecorrida;
+  const estadosValidos = ['rechazado', 'no_encontrado', 'reprogramado'];
+  if (!estadosValidos.includes(nuevoEstado)) {
+    throw new Error(`Estado no válido. Use: ${estadosValidos.join(', ')}`);
   }
+
+  this.estado = nuevoEstado;
+  this.fecha_entrega = new Date();
+  this.motivoNoEntrega = motivo;
+
+  if (datos.fotoEntrega) this.fotoEntrega = datos.fotoEntrega;
+  if (datos.observaciones) this.observaciones = datos.observaciones;
 
   return await this.save();
 };

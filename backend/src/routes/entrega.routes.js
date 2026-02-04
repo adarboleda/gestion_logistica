@@ -4,11 +4,7 @@ import {
   obtenerEntregas,
   obtenerEntregaPorId,
   actualizarEstadoEntrega,
-  iniciarTrackingSimulado,
-  simularActualizacionUbicacion,
-  obtenerTracking,
   obtenerHistorialEntregas,
-  completarEntrega,
   crearEntregaDesdeRuta,
   eliminarEntrega,
 } from '../controllers/entrega.controller.js';
@@ -21,18 +17,20 @@ const router = express.Router();
 router.use(verificarAutenticacion);
 
 /**
+ * RUTAS DE ENTREGAS - SIMPLIFICADAS
+ *
+ * Las entregas se crean automáticamente cuando una Ruta pasa a 'en_transito'.
+ * El conductor usa este módulo solo para marcar el estado final de la entrega.
+ *
+ * IMPORTANTE: El tracking GPS está en el módulo de Rutas, no aquí.
+ */
+
+/**
  * @route   GET /api/entregas/historial
  * @desc    Obtener historial de entregas (día, semana, mes)
  * @access  Privado
  */
 router.get('/historial', obtenerHistorialEntregas);
-
-/**
- * @route   GET /api/entregas/:id/tracking
- * @desc    Obtener tracking/ubicación de una entrega
- * @access  Privado
- */
-router.get('/:id/tracking', obtenerTracking);
 
 /**
  * @route   GET /api/entregas
@@ -50,43 +48,23 @@ router.get('/:id', obtenerEntregaPorId);
 
 /**
  * @route   POST /api/entregas
- * @desc    Crear nueva entrega
+ * @desc    Crear nueva entrega manualmente
  * @access  Privado (Coordinador/Admin)
  */
 router.post('/', esAdminOCoordinador, crearEntrega);
 
 /**
  * @route   POST /api/entregas/desde-ruta/:rutaId
- * @desc    Crear entrega desde una ruta existente
+ * @desc    Crear entrega desde una ruta (cuando cambia a en_transito)
  * @access  Privado (Coordinador/Admin)
  */
 router.post('/desde-ruta/:rutaId', esAdminOCoordinador, crearEntregaDesdeRuta);
 
 /**
- * @route   POST /api/entregas/:id/iniciar-tracking
- * @desc    Iniciar tracking simulado de la entrega
- * @access  Privado
- */
-router.post('/:id/iniciar-tracking', iniciarTrackingSimulado);
-
-/**
- * @route   POST /api/entregas/:id/simular-ubicacion
- * @desc    Simular actualización de ubicación (demo)
- * @access  Privado
- */
-router.post('/:id/simular-ubicacion', simularActualizacionUbicacion);
-
-/**
- * @route   POST /api/entregas/:id/completar
- * @desc    Completar entrega con firma y foto
- * @access  Privado
- */
-router.post('/:id/completar', completarEntrega);
-
-/**
  * @route   PATCH /api/entregas/:id/estado
- * @desc    Actualizar estado de entrega
+ * @desc    Marcar estado de entrega (conductor marca resultado)
  * @access  Privado
+ * @body    { estado, motivoNoEntrega?, observaciones?, productosEntregados?, firma?, fotoEntrega?, calificacion? }
  */
 router.patch('/:id/estado', actualizarEstadoEntrega);
 

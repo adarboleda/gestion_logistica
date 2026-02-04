@@ -322,6 +322,11 @@ export const rutaService = {
 };
 
 // ==================== ENTREGAS ====================
+/**
+ * Servicio de Entregas - Simplificado
+ * El tracking GPS ahora está en el servicio de rutas.
+ * Este servicio es solo para marcar el estado final de las entregas.
+ */
 
 export const entregaService = {
   // Obtener todas
@@ -348,33 +353,9 @@ export const entregaService = {
     return response.data;
   },
 
-  // Actualizar estado
+  // Actualizar estado (marcar entrega como entregado, parcial, rechazado, etc.)
   actualizarEstado: async (id, data) => {
     const response = await api.patch(`/entregas/${id}/estado`, data);
-    return response.data;
-  },
-
-  // Iniciar tracking
-  iniciarTracking: async (id) => {
-    const response = await api.post(`/entregas/${id}/iniciar-tracking`);
-    return response.data;
-  },
-
-  // Simular ubicación
-  simularUbicacion: async (id) => {
-    const response = await api.post(`/entregas/${id}/simular-ubicacion`);
-    return response.data;
-  },
-
-  // Obtener tracking
-  obtenerTracking: async (id) => {
-    const response = await api.get(`/entregas/${id}/tracking`);
-    return response.data;
-  },
-
-  // Completar entrega
-  completar: async (id, data) => {
-    const response = await api.post(`/entregas/${id}/completar`, data);
     return response.data;
   },
 

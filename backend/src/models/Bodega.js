@@ -41,18 +41,6 @@ const bodegaSchema = new mongoose.Schema(
             'El código postal debe tener 6 dígitos y los dos primeros deben corresponder a una provincia válida de Ecuador (01-24)',
         },
       },
-      coordenadas: {
-        latitud: {
-          type: Number,
-          min: -90,
-          max: 90,
-        },
-        longitud: {
-          type: Number,
-          min: -180,
-          max: 180,
-        },
-      },
     },
     estado: {
       type: String,

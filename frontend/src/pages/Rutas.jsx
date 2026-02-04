@@ -319,6 +319,8 @@ function Rutas() {
   const [showTrackingDialog, setShowTrackingDialog] = useState(false);
   const [rutaSeleccionada, setRutaSeleccionada] = useState(null);
   const [trackingData, setTrackingData] = useState([]);
+  const [simulandoTracking, setSimulandoTracking] = useState(false);
+  const [intervaloTracking, setIntervaloTracking] = useState(null);
 
   // Cargar lista de rutas
   const cargarRutas = async () => {
@@ -520,6 +522,81 @@ function Rutas() {
     setShowTrackingDialog(true);
   };
 
+  // Simular actualización de tracking para rutas en tránsito
+  const simularTracking = async () => {
+    if (!rutaSeleccionada || rutaSeleccionada.estado !== 'en_transito') return;
+
+    try {
+      const response = await api.post(
+        `/rutas/${rutaSeleccionada._id}/tracking`,
+        {
+          latitud: -0.2 + (Math.random() * 2 - 1),
+          longitud: -78.5 + (Math.random() * 2 - 1),
+          velocidad: Math.floor(Math.random() * 60) + 20,
+          observacion: `Actualización simulada - ${new Date().toLocaleTimeString()}`,
+        },
+      );
+
+      if (response.data.success) {
+        // Recargar tracking
+        const trackingResp = await api.get(
+          `/rutas/${rutaSeleccionada._id}/tracking`,
+        );
+        if (trackingResp.data.success) {
+          setTrackingData(trackingResp.data.data.tracking || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error simulando tracking:', error);
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo actualizar el tracking',
+        life: 3000,
+      });
+    }
+  };
+
+  const iniciarSimulacionTracking = () => {
+    setSimulandoTracking(true);
+    toast.current?.show({
+      severity: 'success',
+      summary: 'Simulación Iniciada',
+      detail: 'Simulando movimiento del vehículo...',
+      life: 3000,
+    });
+
+    // Hacer una actualización inmediata
+    simularTracking();
+
+    // Iniciar intervalo para actualizaciones periódicas
+    const intervalo = setInterval(() => {
+      simularTracking();
+    }, 5000); // Cada 5 segundos
+
+    setIntervaloTracking(intervalo);
+  };
+
+  const detenerSimulacionTracking = () => {
+    if (intervaloTracking) {
+      clearInterval(intervaloTracking);
+      setIntervaloTracking(null);
+    }
+    setSimulandoTracking(false);
+    toast.current?.show({
+      severity: 'info',
+      summary: 'Simulación Detenida',
+      detail: 'La simulación ha sido detenida',
+      life: 3000,
+    });
+  };
+
+  // Limpiar intervalo al cerrar el diálogo
+  const cerrarDialogoTracking = () => {
+    detenerSimulacionTracking();
+    setShowTrackingDialog(false);
+  };
+
   return (
     <div className="p-4">
       <Toast ref={toast} />
@@ -612,51 +689,140 @@ function Rutas() {
         </DataTable>
       </Card>
 
-      {/* Dialog de Tracking */}
+      {/* Dialog de Tracking Mejorado */}
       <Dialog
         header={`Tracking - Ruta ${rutaSeleccionada?.numeroRuta || ''}`}
         visible={showTrackingDialog}
-        style={{ width: '600px' }}
-        onHide={() => setShowTrackingDialog(false)}
+        style={{ width: '700px' }}
+        onHide={cerrarDialogoTracking}
         modal
       >
-        {trackingData.length > 0 ? (
-          <div className="space-y-3">
-            {trackingData.map((punto, index) => (
-              <div
-                key={index}
-                className="p-3 border rounded"
-                style={{ backgroundColor: 'var(--color-accent)' }}
-              >
-                <div className="flex justify-between items-center mb-2">
-                  <Tag value={`Punto ${index + 1}`} severity="info" />
-                  <span className="text-sm text-gray-500">
-                    {new Date(punto.fecha).toLocaleString('es-CO')}
-                  </span>
-                </div>
-                <p className="text-sm">
-                  <strong>Ubicación:</strong> {punto.latitud.toFixed(6)},{' '}
-                  {punto.longitud.toFixed(6)}
+        {rutaSeleccionada && (
+          <div className="space-y-4">
+            {/* Información de la ruta */}
+            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div>
+                <p className="text-sm text-gray-500">Origen</p>
+                <p className="font-semibold">
+                  {rutaSeleccionada.origen?.nombre}
                 </p>
-                {punto.velocidad > 0 && (
-                  <p className="text-sm">
-                    <strong>Velocidad:</strong> {punto.velocidad} km/h
-                  </p>
-                )}
-                {punto.observacion && (
-                  <p className="text-sm">
-                    <strong>Obs:</strong> {punto.observacion}
-                  </p>
-                )}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-6">
-            <i className="pi pi-map-marker text-4xl text-gray-400 mb-3"></i>
-            <p className="text-gray-500">
-              No hay datos de tracking disponibles
-            </p>
+              <div>
+                <p className="text-sm text-gray-500">Destino</p>
+                <p className="font-semibold">
+                  {rutaSeleccionada.destino?.nombre}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Conductor</p>
+                <p className="font-semibold">
+                  {rutaSeleccionada.conductor?.nombre || 'N/A'}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Vehículo</p>
+                <p className="font-semibold">
+                  {rutaSeleccionada.vehiculo?.placa || 'N/A'}
+                </p>
+              </div>
+            </div>
+
+            {/* Botones de simulación - Solo para rutas en tránsito */}
+            {rutaSeleccionada.estado === 'en_transito' && (
+              <div className="flex gap-2 justify-center">
+                {!simulandoTracking ? (
+                  <Button
+                    label="Iniciar Simulación de Tracking"
+                    icon="pi pi-play"
+                    severity="success"
+                    onClick={iniciarSimulacionTracking}
+                  />
+                ) : (
+                  <Button
+                    label="Detener Simulación"
+                    icon="pi pi-stop"
+                    severity="danger"
+                    onClick={detenerSimulacionTracking}
+                  />
+                )}
+                <Button
+                  label="Actualizar Manualmente"
+                  icon="pi pi-refresh"
+                  outlined
+                  onClick={simularTracking}
+                  disabled={simulandoTracking}
+                />
+              </div>
+            )}
+
+            {simulandoTracking && (
+              <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <i className="pi pi-spin pi-spinner mr-2 text-blue-500"></i>
+                <span className="text-blue-700">
+                  Simulando movimiento del vehículo cada 5 segundos...
+                </span>
+              </div>
+            )}
+
+            {/* Lista de puntos de tracking */}
+            <div className="border rounded-lg max-h-80 overflow-y-auto">
+              <div className="p-3 bg-gray-100 border-b font-semibold sticky top-0">
+                📍 Historial de Ubicaciones ({trackingData.length} puntos)
+              </div>
+              {trackingData.length > 0 ? (
+                <div className="divide-y">
+                  {trackingData
+                    .slice()
+                    .reverse()
+                    .map((punto, index) => (
+                      <div key={index} className="p-3 hover:bg-gray-50">
+                        <div className="flex justify-between items-center mb-1">
+                          <Tag
+                            value={
+                              index === 0
+                                ? 'Última ubicación'
+                                : `Punto ${trackingData.length - index}`
+                            }
+                            severity={index === 0 ? 'success' : 'info'}
+                            className="text-xs"
+                          />
+                          <span className="text-xs text-gray-500">
+                            {new Date(punto.fecha).toLocaleString('es-EC')}
+                          </span>
+                        </div>
+                        <div className="text-sm">
+                          <p>
+                            <strong>Lat:</strong> {punto.latitud?.toFixed(6)} |{' '}
+                            <strong>Lng:</strong> {punto.longitud?.toFixed(6)}
+                          </p>
+                          {punto.velocidad > 0 && (
+                            <p>
+                              <strong>Velocidad:</strong> {punto.velocidad} km/h
+                            </p>
+                          )}
+                          {punto.observacion && (
+                            <p className="text-gray-600">
+                              <strong>Obs:</strong> {punto.observacion}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <i className="pi pi-map-marker text-4xl text-gray-400 mb-3"></i>
+                  <p className="text-gray-500">
+                    No hay datos de tracking disponibles
+                  </p>
+                  {rutaSeleccionada.estado === 'en_transito' && (
+                    <p className="text-sm text-gray-400 mt-2">
+                      Inicie la simulación para generar puntos de tracking
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </Dialog>
