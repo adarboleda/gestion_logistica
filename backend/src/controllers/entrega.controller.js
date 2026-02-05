@@ -2,6 +2,7 @@ import Entrega from '../models/Entrega.js';
 import Ruta from '../models/Ruta.js';
 import Usuario from '../models/Usuario.js';
 import Vehiculo from '../models/Vehiculo.js';
+import Producto from '../models/Producto.js';
 
 /**
  * CONTROLADOR DE ENTREGAS - SIMPLIFICADO
@@ -309,6 +310,17 @@ export const actualizarEstadoEntrega = async (req, res) => {
       entrega.productos.forEach((p) => {
         p.cantidadEntregada = p.cantidadProgramada;
       });
+
+      // Disminuir stock de los productos entregados
+      for (const item of entrega.productos) {
+        if (item.producto && item.cantidadProgramada > 0) {
+          await Producto.findByIdAndUpdate(
+            item.producto,
+            { $inc: { stock_actual: -item.cantidadProgramada } },
+            { new: true },
+          );
+        }
+      }
     } else if (estado === 'retrasado') {
       // Guardar motivo del retraso
       if (motivoNoEntrega) entrega.motivoNoEntrega = motivoNoEntrega;

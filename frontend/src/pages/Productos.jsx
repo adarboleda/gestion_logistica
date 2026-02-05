@@ -33,7 +33,6 @@ function Productos() {
     categoria: '',
     precio: 0,
     stock_minimo: 0,
-    unidadMedida: 'unidad',
     imagen: '',
     bodega: null,
   });
@@ -45,15 +44,6 @@ function Productos() {
     { label: 'Farmacéutico', value: 'Farmacéutico' },
     { label: 'Industrial', value: 'Industrial' },
     { label: 'Otro', value: 'Otro' },
-  ];
-
-  const unidadesMedida = [
-    { label: 'Unidad', value: 'unidad' },
-    { label: 'Kilogramo', value: 'kg' },
-    { label: 'Litro', value: 'litro' },
-    { label: 'Metro', value: 'metro' },
-    { label: 'Caja', value: 'caja' },
-    { label: 'Pallet', value: 'pallet' },
   ];
 
   useEffect(() => {
@@ -101,7 +91,6 @@ function Productos() {
       categoria: producto.categoria,
       precio: producto.precio,
       stock_minimo: producto.stock_minimo,
-      unidadMedida: producto.unidadMedida || 'unidad',
       imagen: producto.imagen || '',
       bodega: producto.bodega?._id || null,
     });
@@ -117,7 +106,6 @@ function Productos() {
       categoria: '',
       precio: 0,
       stock_minimo: 0,
-      unidadMedida: 'unidad',
       imagen: '',
       bodega: null,
     });
@@ -233,15 +221,23 @@ function Productos() {
 
   // Templates para columnas
   const imagenTemplate = (rowData) => {
+    if (rowData.imagen) {
+      return (
+        <img
+          src={rowData.imagen}
+          alt={rowData.nombre}
+          className="w-12 h-12 object-cover rounded"
+          onError={(e) => {
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'flex';
+          }}
+        />
+      );
+    }
     return (
-      <img
-        src={rowData.imagen || 'https://via.placeholder.com/50'}
-        alt={rowData.nombre}
-        className="w-12 h-12 object-cover rounded"
-        onError={(e) => {
-          e.target.src = 'https://via.placeholder.com/50';
-        }}
-      />
+      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+        <i className="pi pi-box text-gray-400 text-xl"></i>
+      </div>
     );
   };
 
@@ -249,7 +245,7 @@ function Productos() {
     const isLow = rowData.stock_actual <= rowData.stock_minimo;
     return (
       <Tag
-        value={`${rowData.stock_actual} ${rowData.unidadMedida || 'unidad'}`}
+        value={`${rowData.stock_actual} unidades`}
         severity={isLow ? 'danger' : 'success'}
         icon={isLow ? 'pi pi-exclamation-triangle' : 'pi pi-check'}
       />
@@ -567,24 +563,6 @@ function Productos() {
               }
               className="w-full"
               min={0}
-            />
-          </div>
-
-          <div className="col-span-1">
-            <label
-              className="block mb-2 font-semibold"
-              style={{ color: 'var(--color-secondary)' }}
-            >
-              Unidad de Medida
-            </label>
-            <Dropdown
-              value={formData.unidadMedida}
-              onChange={(e) =>
-                setFormData({ ...formData, unidadMedida: e.value })
-              }
-              options={unidadesMedida}
-              placeholder="Seleccione"
-              className="w-full"
             />
           </div>
 

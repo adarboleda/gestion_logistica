@@ -53,14 +53,6 @@ const productoSchema = new mongoose.Schema(
       min: [0, 'El stock mínimo no puede ser negativo'],
       default: 10,
     },
-    unidadMedida: {
-      type: String,
-      enum: {
-        values: ['unidad', 'kg', 'litro', 'metro', 'caja', 'pallet'],
-        message: '{VALUE} no es una unidad de medida válida',
-      },
-      default: 'unidad',
-    },
     precio: {
       type: Number,
       min: [0, 'El precio no puede ser negativo'],
@@ -69,8 +61,7 @@ const productoSchema = new mongoose.Schema(
     imagen: {
       type: String,
       trim: true,
-      default: 'https://via.placeholder.com/150',
-      match: [/^https?:\/\/.+/, 'La URL de la imagen debe ser válida'],
+      default: '',
     },
     bodega: {
       type: mongoose.Schema.Types.ObjectId,

@@ -8,6 +8,14 @@ function Sidebar() {
 
   const isActive = (path) => location.pathname === path;
 
+  // Roles disponibles: admin, coordinador, conductor, operador
+  // Admin: Todo acceso
+  // Coordinador: Solo Rutas + Entregas (ver, no puede marcar estado)
+  // Conductor: Rutas (sin crear) + Entregas (todo)
+  // Operador: Solo Productos + Movimientos
+
+  const rol = user?.rol;
+
   const menuSections = [
     {
       label: 'Principal',
@@ -21,6 +29,8 @@ function Sidebar() {
     },
     {
       label: 'Inventario',
+      // Solo admin y operador ven esta sección
+      visible: rol === 'admin' || rol === 'operador',
       items: [
         {
           label: 'Productos',
@@ -36,38 +46,46 @@ function Sidebar() {
     },
     {
       label: 'Gestión',
+      // Solo admin ve bodegas y vehículos
+      // Coordinador y Conductor ven rutas y entregas
+      visible: rol === 'admin' || rol === 'coordinador' || rol === 'conductor',
       items: [
         {
           label: 'Bodegas',
           icon: 'pi pi-building',
           path: '/bodegas',
+          visible: rol === 'admin',
         },
         {
           label: 'Vehículos',
           icon: 'pi pi-car',
           path: '/vehiculos',
+          visible: rol === 'admin',
         },
         {
           label: 'Rutas',
           icon: 'pi pi-map',
           path: '/rutas',
+          visible:
+            rol === 'admin' || rol === 'coordinador' || rol === 'conductor',
         },
         {
           label: 'Entregas',
           icon: 'pi pi-truck',
           path: '/entregas',
+          visible:
+            rol === 'admin' || rol === 'coordinador' || rol === 'conductor',
         },
       ],
     },
     {
       label: 'Administración',
-      visible: user?.rol === 'admin' || user?.rol === 'coordinador',
+      visible: rol === 'admin',
       items: [
         {
           label: 'Usuarios',
           icon: 'pi pi-users',
           path: '/usuarios',
-          visible: user?.rol === 'admin',
         },
       ],
     },

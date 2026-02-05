@@ -477,7 +477,11 @@ function Movimientos() {
               <Dropdown
                 value={formData.bodegaOrigen}
                 onChange={(e) =>
-                  setFormData({ ...formData, bodegaOrigen: e.value })
+                  setFormData({
+                    ...formData,
+                    bodegaOrigen: e.value,
+                    producto: null,
+                  })
                 }
                 options={bodegas.map((b) => ({
                   label: b.nombre,
@@ -519,18 +523,51 @@ function Movimientos() {
               className="block mb-2 font-semibold"
               style={{ color: 'var(--color-secondary)' }}
             >
-              Producto *
+              Producto *{' '}
+              {(formData.tipo === 'salida' ||
+                formData.tipo === 'transferencia') &&
+                !formData.bodegaOrigen && (
+                  <span className="text-gray-400 text-sm">
+                    (seleccione bodega origen primero)
+                  </span>
+                )}
             </label>
             <Dropdown
               value={formData.producto}
               onChange={(e) => setFormData({ ...formData, producto: e.value })}
-              options={productos.map((p) => ({
-                label: `${p.nombre} (${p.codigo})`,
-                value: p._id,
-              }))}
-              placeholder="Seleccione"
+              options={
+                // Filtrar productos por bodega de origen para salidas y transferencias
+                formData.tipo === 'salida' || formData.tipo === 'transferencia'
+                  ? productos
+                      .filter(
+                        (p) =>
+                          p.bodega?._id === formData.bodegaOrigen ||
+                          p.bodega === formData.bodegaOrigen,
+                      )
+                      .map((p) => ({
+                        label: `${p.nombre} (${p.codigo}) - Stock: ${p.stock_actual}`,
+                        value: p._id,
+                      }))
+                  : productos.map((p) => ({
+                      label: `${p.nombre} (${p.codigo})`,
+                      value: p._id,
+                    }))
+              }
+              placeholder={
+                (formData.tipo === 'salida' ||
+                  formData.tipo === 'transferencia') &&
+                !formData.bodegaOrigen
+                  ? 'Primero seleccione bodega origen'
+                  : 'Seleccione'
+              }
               filter
               className="w-full"
+              disabled={
+                (formData.tipo === 'salida' ||
+                  formData.tipo === 'transferencia') &&
+                !formData.bodegaOrigen
+              }
+              emptyMessage="No hay productos en esta bodega"
             />
           </div>
 

@@ -120,7 +120,6 @@ export const crearProducto = async (req, res) => {
       categoria,
       stock_actual,
       stock_minimo,
-      unidadMedida,
       precio,
       imagen,
       bodega,
@@ -169,7 +168,6 @@ export const crearProducto = async (req, res) => {
       categoria,
       stock_actual: stock_actual || 0,
       stock_minimo: stock_minimo || 10,
-      unidadMedida,
       precio: precio || 0,
       imagen,
       bodega,
@@ -205,7 +203,6 @@ export const actualizarProducto = async (req, res) => {
       descripcion,
       categoria,
       stock_minimo,
-      unidadMedida,
       precio,
       imagen,
       bodega,
@@ -244,7 +241,6 @@ export const actualizarProducto = async (req, res) => {
     if (descripcion !== undefined) producto.descripcion = descripcion;
     if (categoria) producto.categoria = categoria;
     if (stock_minimo !== undefined) producto.stock_minimo = stock_minimo;
-    if (unidadMedida) producto.unidadMedida = unidadMedida;
     if (precio !== undefined) producto.precio = precio;
     if (imagen) producto.imagen = imagen;
     if (activo !== undefined) producto.activo = activo;

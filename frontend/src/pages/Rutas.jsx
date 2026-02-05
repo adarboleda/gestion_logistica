@@ -15,9 +15,21 @@ import { Toolbar } from 'primereact/toolbar';
 import { Tag } from 'primereact/tag';
 import { productoService } from '../services';
 import api from '../services/api';
+import { useAuthStore } from '../context/authStore';
+
+/**
+ * PERMISOS POR ROL:
+ * - admin: Todo acceso (crear, editar, gestionar)
+ * - coordinador: Crear y gestionar rutas
+ * - conductor: Solo gestionar rutas (iniciar, completar, tracking), NO puede crear nuevas
+ */
 
 function Rutas() {
   const toast = useRef(null);
+  const { user } = useAuthStore();
+
+  // Permisos según rol
+  const puedeCrearRutas = user?.rol === 'admin' || user?.rol === 'coordinador';
 
   // Estados del formulario principal
   const [showDialog, setShowDialog] = useState(false);
@@ -275,7 +287,7 @@ function Rutas() {
     return (
       <div className="flex align-items-center gap-2">
         <span>{rowData.stock_actual}</span>
-        <span className="text-500">{rowData.unidadMedida}</span>
+        <span className="text-500">unidades</span>
       </div>
     );
   };
@@ -528,9 +540,29 @@ function Rutas() {
     setShowTrackingDialog(true);
   };
 
+  // Ubicaciones de Ecuador para la simulación
+  const ubicacionesEcuador = [
+    { provincia: 'Pichincha', ciudad: 'Quito', sector: 'Centro Histórico' },
+    { provincia: 'Pichincha', ciudad: 'Quito', sector: 'La Mariscal' },
+    { provincia: 'Pichincha', ciudad: 'Quito', sector: 'El Bosque' },
+    { provincia: 'Guayas', ciudad: 'Guayaquil', sector: 'Malecón 2000' },
+    { provincia: 'Guayas', ciudad: 'Guayaquil', sector: 'Samborondón' },
+    { provincia: 'Azuay', ciudad: 'Cuenca', sector: 'El Vergel' },
+    { provincia: 'Manabí', ciudad: 'Manta', sector: 'Tarqui' },
+    { provincia: 'El Oro', ciudad: 'Machala', sector: 'Centro' },
+    { provincia: 'Tungurahua', ciudad: 'Ambato', sector: 'Ficoa' },
+    { provincia: 'Chimborazo', ciudad: 'Riobamba', sector: 'La Estación' },
+  ];
+
+  // Estado para el contador de simulación
+  const [contadorSimulacion, setContadorSimulacion] = useState(0);
+
   // Simular actualización de tracking para rutas en tránsito
-  const simularTracking = async () => {
+  const simularTracking = async (ubicacionIndex) => {
     if (!rutaSeleccionada || rutaSeleccionada.estado !== 'en_transito') return;
+
+    const ubicacion =
+      ubicacionesEcuador[ubicacionIndex % ubicacionesEcuador.length];
 
     try {
       const response = await api.post(
@@ -539,7 +571,7 @@ function Rutas() {
           latitud: -0.2 + (Math.random() * 2 - 1),
           longitud: -78.5 + (Math.random() * 2 - 1),
           velocidad: Math.floor(Math.random() * 60) + 20,
-          observacion: `Actualización simulada - ${new Date().toLocaleTimeString()}`,
+          observacion: `📍 ${ubicacion.provincia} - ${ubicacion.ciudad}, ${ubicacion.sector}`,
         },
       );
 
@@ -554,29 +586,62 @@ function Rutas() {
       }
     } catch (error) {
       console.error('Error simulando tracking:', error);
-      toast.current?.show({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo actualizar el tracking',
-        life: 3000,
-      });
     }
   };
 
-  const iniciarSimulacionTracking = () => {
+  const iniciarSimulacionTracking = async () => {
     setSimulandoTracking(true);
+    setContadorSimulacion(0);
+
     toast.current?.show({
       severity: 'success',
       summary: 'Simulación Iniciada',
-      detail: 'Simulando movimiento del vehículo...',
+      detail: 'Simulando movimiento del vehículo (1 minuto)...',
       life: 3000,
     });
 
-    simularTracking();
+    // Primera actualización inmediata
+    await simularTracking(0);
 
-    const intervalo = setInterval(() => {
-      simularTracking();
-    }, 5000);
+    let contador = 1;
+
+    // 10 actualizaciones en 1 minuto = cada 6 segundos
+    const intervalo = setInterval(async () => {
+      if (contador >= 10) {
+        // Detener simulación y completar ruta
+        clearInterval(intervalo);
+        setIntervaloTracking(null);
+        setSimulandoTracking(false);
+
+        // Auto-completar la ruta
+        try {
+          const response = await api.patch(
+            `/rutas/${rutaSeleccionada._id}/estado`,
+            {
+              estado: 'completada',
+            },
+          );
+          if (response.data.success) {
+            toast.current?.show({
+              severity: 'success',
+              summary: '¡Ruta Completada!',
+              detail:
+                'La simulación finalizó y la ruta ha sido marcada como completada. La entrega está pendiente de confirmar.',
+              life: 5000,
+            });
+            setRutaSeleccionada({ ...rutaSeleccionada, estado: 'completada' });
+            cargarRutas();
+          }
+        } catch (error) {
+          console.error('Error completando ruta:', error);
+        }
+        return;
+      }
+
+      await simularTracking(contador);
+      contador++;
+      setContadorSimulacion(contador);
+    }, 6000); // Cada 6 segundos (10 updates en 60 segundos = 1 minuto)
 
     setIntervaloTracking(intervalo);
   };
@@ -587,10 +652,11 @@ function Rutas() {
       setIntervaloTracking(null);
     }
     setSimulandoTracking(false);
+    setContadorSimulacion(0);
     toast.current?.show({
       severity: 'info',
       summary: 'Simulación Detenida',
-      detail: 'La simulación ha sido detenida',
+      detail: 'La simulación ha sido detenida manualmente',
       life: 3000,
     });
   };
@@ -610,16 +676,20 @@ function Rutas() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Gestión de Rutas</h1>
           <p className="text-gray-600 text-sm">
-            Planifica y gestiona las rutas de entrega
+            {puedeCrearRutas
+              ? 'Planifica y gestiona las rutas de entrega'
+              : 'Gestiona las rutas de entrega asignadas'}
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            label="Nueva Ruta"
-            icon="pi pi-plus"
-            severity="success"
-            onClick={abrirDialogoCrear}
-          />
+          {puedeCrearRutas && (
+            <Button
+              label="Nueva Ruta"
+              icon="pi pi-plus"
+              severity="success"
+              onClick={abrirDialogoCrear}
+            />
+          )}
           <Button
             icon="pi pi-refresh"
             outlined
@@ -736,26 +806,19 @@ function Rutas() {
               <div className="flex gap-2 justify-center">
                 {!simulandoTracking ? (
                   <Button
-                    label="Iniciar Simulación de Tracking"
+                    label="Iniciar Simulación (1 min)"
                     icon="pi pi-play"
                     severity="success"
                     onClick={iniciarSimulacionTracking}
                   />
                 ) : (
                   <Button
-                    label="Detener Simulación"
+                    label={`Detener (${10 - contadorSimulacion} restantes)`}
                     icon="pi pi-stop"
                     severity="danger"
                     onClick={detenerSimulacionTracking}
                   />
                 )}
-                <Button
-                  label="Actualizar"
-                  icon="pi pi-refresh"
-                  outlined
-                  onClick={simularTracking}
-                  disabled={simulandoTracking}
-                />
               </div>
             )}
 
@@ -763,7 +826,8 @@ function Rutas() {
               <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
                 <i className="pi pi-spin pi-spinner mr-2 text-blue-500"></i>
                 <span className="text-blue-700">
-                  Simulando movimiento cada 5 segundos...
+                  Simulando movimiento... ({contadorSimulacion}/10
+                  actualizaciones) - La ruta se completará automáticamente
                 </span>
               </div>
             )}
@@ -794,18 +858,15 @@ function Rutas() {
                           </span>
                         </div>
                         <div className="text-sm">
-                          <p>
-                            <strong>Lat:</strong> {punto.latitud?.toFixed(6)} |{' '}
-                            <strong>Lng:</strong> {punto.longitud?.toFixed(6)}
-                          </p>
-                          {punto.velocidad > 0 && (
-                            <p>
-                              <strong>Velocidad:</strong> {punto.velocidad} km/h
+                          {punto.observacion && (
+                            <p className="font-medium text-gray-800 mb-1">
+                              {punto.observacion}
                             </p>
                           )}
-                          {punto.observacion && (
+                          {punto.velocidad > 0 && (
                             <p className="text-gray-600">
-                              <strong>Obs:</strong> {punto.observacion}
+                              <i className="pi pi-car mr-1"></i>
+                              Velocidad: {punto.velocidad} km/h
                             </p>
                           )}
                         </div>
@@ -848,9 +909,11 @@ function Rutas() {
               <Dropdown
                 value={formData.bodegaOrigen}
                 options={bodegas}
-                onChange={(e) =>
-                  setFormData({ ...formData, bodegaOrigen: e.value })
-                }
+                onChange={(e) => {
+                  setFormData({ ...formData, bodegaOrigen: e.value });
+                  // Limpiar productos seleccionados cuando cambia la bodega
+                  setProductosSeleccionados([]);
+                }}
                 optionLabel="nombre"
                 placeholder="Seleccione la bodega de origen"
                 filter
@@ -1196,69 +1259,86 @@ function Rutas() {
         onHide={() => setShowProductosDialog(false)}
         modal
       >
-        <Message
-          severity="info"
-          text="Seleccione los productos que desea incluir en la ruta"
-          className="mb-3 w-full"
-        />
-
-        <DataTable
-          value={productos}
-          selection={productosSeleccionados}
-          onSelectionChange={(e) => setProductosSeleccionados(e.value)}
-          dataKey="_id"
-          paginator
-          rows={10}
-          rowsPerPageOptions={[5, 10, 25]}
-          emptyMessage="No hay productos disponibles"
-          loading={loading}
-          stripedRows
-          selectionMode="checkbox"
-          filterDisplay="row"
-        >
-          <Column selectionMode="multiple" headerStyle={{ width: '3rem' }} />
-          <Column
-            field="nombre"
-            header="Producto"
-            body={nombreProductoTemplate}
-            sortable
-            filter
-            filterPlaceholder="Buscar..."
+        {!formData.bodegaOrigen ? (
+          <Message
+            severity="warn"
+            text="Primero seleccione una bodega de origen para ver los productos disponibles"
+            className="mb-3 w-full"
           />
-          <Column field="categoria" header="Categoría" sortable filter />
-          <Column
-            field="stock_actual"
-            header="Stock"
-            body={stockTemplate}
-            sortable
-          />
-          <Column field="bodega" header="Bodega" body={bodegaTemplate} />
-        </DataTable>
+        ) : (
+          <>
+            <Message
+              severity="info"
+              text={`Productos disponibles en: ${formData.bodegaOrigen.nombre}`}
+              className="mb-3 w-full"
+            />
 
-        <div className="flex justify-content-between mt-4">
-          <div>
-            {productosSeleccionados.length > 0 && (
-              <Tag
-                value={`${productosSeleccionados.length} producto(s) seleccionado(s)`}
-                severity="success"
+            <DataTable
+              value={productos.filter(
+                (p) =>
+                  p.bodega?._id === formData.bodegaOrigen?._id ||
+                  p.bodega === formData.bodegaOrigen?._id,
+              )}
+              selection={productosSeleccionados}
+              onSelectionChange={(e) => setProductosSeleccionados(e.value)}
+              dataKey="_id"
+              paginator
+              rows={10}
+              rowsPerPageOptions={[5, 10, 25]}
+              emptyMessage="No hay productos disponibles en esta bodega"
+              loading={loading}
+              stripedRows
+              selectionMode="checkbox"
+              filterDisplay="row"
+            >
+              <Column
+                selectionMode="multiple"
+                headerStyle={{ width: '3rem' }}
               />
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              label="Cancelar"
-              icon="pi pi-times"
-              outlined
-              onClick={() => setShowProductosDialog(false)}
-            />
-            <Button
-              label="Confirmar Selección"
-              icon="pi pi-check"
-              onClick={() => setShowProductosDialog(false)}
-              disabled={productosSeleccionados.length === 0}
-            />
-          </div>
-        </div>
+              <Column
+                field="nombre"
+                header="Producto"
+                body={nombreProductoTemplate}
+                sortable
+                filter
+                filterPlaceholder="Buscar..."
+              />
+              <Column field="categoria" header="Categoría" sortable filter />
+              <Column
+                field="stock_actual"
+                header="Stock"
+                body={stockTemplate}
+                sortable
+              />
+              <Column field="bodega" header="Bodega" body={bodegaTemplate} />
+            </DataTable>
+
+            <div className="flex justify-content-between mt-4">
+              <div>
+                {productosSeleccionados.length > 0 && (
+                  <Tag
+                    value={`${productosSeleccionados.length} producto(s) seleccionado(s)`}
+                    severity="success"
+                  />
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  label="Cancelar"
+                  icon="pi pi-times"
+                  outlined
+                  onClick={() => setShowProductosDialog(false)}
+                />
+                <Button
+                  label="Confirmar Selección"
+                  icon="pi pi-check"
+                  onClick={() => setShowProductosDialog(false)}
+                  disabled={productosSeleccionados.length === 0}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </Dialog>
     </div>
   );

@@ -14,6 +14,7 @@ import { Toolbar } from 'primereact/toolbar';
 import { TabView, TabPanel } from 'primereact/tabview';
 import { FilterMatchMode } from 'primereact/api';
 import { entregaService } from '../services';
+import { useAuthStore } from '../context/authStore';
 
 /**
  * PÁGINA DE ENTREGAS - SIMPLIFICADA
@@ -27,10 +28,16 @@ import { entregaService } from '../services';
  * - en_proceso: El conductor está realizando la entrega
  * - entregado: Entrega completada exitosamente
  * - retrasado: Entrega retrasada
+ *
+ * PERMISOS POR ROL:
+ * - admin: Todo acceso
+ * - coordinador: Solo puede ver, NO puede marcar estado
+ * - conductor: Puede marcar estado de entregas
  */
 
 function Entregas() {
   const toast = useRef(null);
+  const { user } = useAuthStore();
   const [entregas, setEntregas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -45,6 +52,9 @@ function Entregas() {
     entregadas: 0,
     retrasadas: 0,
   });
+
+  // Permisos según rol
+  const puedeMarcarEstado = user?.rol === 'admin' || user?.rol === 'conductor';
 
   // Estados para el diálogo de marcar entrega
   const [showMarcarDialog, setShowMarcarDialog] = useState(false);
@@ -233,6 +243,11 @@ function Entregas() {
   };
 
   const accionesTemplate = (rowData) => {
+    // No mostrar acciones si el usuario es coordinador (solo puede ver)
+    if (!puedeMarcarEstado) {
+      return <span className="text-gray-400 text-sm italic">Solo lectura</span>;
+    }
+
     // Solo mostrar acciones si está pendiente o en proceso
     if (!['pendiente', 'en_proceso'].includes(rowData.estado)) {
       return <span className="text-gray-400 text-sm">Finalizada</span>;
