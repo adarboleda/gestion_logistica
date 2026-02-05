@@ -133,14 +133,15 @@ export const crearProducto = async (req, res) => {
       });
     }
 
-    // Verificar que el código no exista
+    // Verificar que el código no exista en la misma bodega
     const productoExiste = await Producto.findOne({
       codigo: codigo.toUpperCase(),
+      bodega: bodega,
     });
     if (productoExiste) {
       return res.status(400).json({
         success: false,
-        message: `Ya existe un producto con el código ${codigo.toUpperCase()}`,
+        message: `Ya existe un producto con el código ${codigo.toUpperCase()} en esta bodega`,
       });
     }
 

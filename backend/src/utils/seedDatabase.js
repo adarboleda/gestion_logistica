@@ -32,6 +32,15 @@ const seedDatabase = async () => {
     await Producto.deleteMany({});
     await Bodega.deleteMany({});
     await Usuario.deleteMany({});
+
+    // Eliminar índice único de código si existe (para permitir mismo código en diferentes bodegas)
+    try {
+      await mongoose.connection.collection('productos').dropIndex('codigo_1');
+      console.log('✅ Índice único de código eliminado');
+    } catch (e) {
+      // El índice puede no existir, ignorar el error
+    }
+
     console.log('✅ Base de datos limpia\n');
 
     // ========== CREAR USUARIOS ==========

@@ -139,12 +139,47 @@ movimientoSchema.pre('save', async function (next) {
           nuevoStock += this.cantidad;
           break;
         case 'salida':
-        case 'transferencia':
           nuevoStock -= this.cantidad;
           if (nuevoStock < 0) {
             throw new Error(
               `Stock insuficiente. Stock actual: ${producto.stock_actual}, Cantidad solicitada: ${this.cantidad}`,
             );
+          }
+          break;
+        case 'transferencia':
+          // Reducir stock en bodega origen
+          nuevoStock -= this.cantidad;
+          if (nuevoStock < 0) {
+            throw new Error(
+              `Stock insuficiente. Stock actual: ${producto.stock_actual}, Cantidad solicitada: ${this.cantidad}`,
+            );
+          }
+
+          // Buscar si existe el mismo producto en la bodega destino
+          let productoDestino = await Producto.findOne({
+            codigo: producto.codigo,
+            bodega: this.bodegaDestino,
+          });
+
+          if (productoDestino) {
+            // Si existe, aumentar su stock
+            productoDestino.stock_actual += this.cantidad;
+            await productoDestino.save();
+          } else {
+            // Si no existe, crear una copia del producto en la bodega destino
+            const nuevoProducto = new Producto({
+              nombre: producto.nombre,
+              codigo: producto.codigo,
+              descripcion: producto.descripcion,
+              categoria: producto.categoria,
+              stock_actual: this.cantidad,
+              stock_minimo: producto.stock_minimo,
+              precio: producto.precio,
+              imagen: producto.imagen,
+              bodega: this.bodegaDestino,
+              activo: true,
+            });
+            await nuevoProducto.save();
           }
           break;
       }

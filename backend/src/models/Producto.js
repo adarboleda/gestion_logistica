@@ -12,7 +12,6 @@ const productoSchema = new mongoose.Schema(
     codigo: {
       type: String,
       required: [true, 'El código del producto es obligatorio'],
-      unique: true,
       uppercase: true,
       trim: true,
       match: [
@@ -81,7 +80,8 @@ const productoSchema = new mongoose.Schema(
 );
 
 // Índices compuestos para mejorar búsquedas
-// codigo ya tiene índice automático por unique: true
+// Código único por bodega (el mismo código puede existir en diferentes bodegas)
+productoSchema.index({ codigo: 1, bodega: 1 }, { unique: true });
 productoSchema.index({ bodega: 1, activo: 1 });
 productoSchema.index({ nombre: 'text', descripcion: 'text' }); // Búsqueda de texto
 
